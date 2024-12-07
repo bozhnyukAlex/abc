@@ -1,6 +1,6 @@
 # Installing abc (AI bash/zsh/tcsh Command)
 
-This guide provides two methods for installing abc on your system: a modern Python package installation using pipx, and the traditional make-based installation.
+This guide provides two methods for installing abc on your system: a modern Python package installation using pipx (recommended), and the traditional make-based installation.
 
 ## Prerequisites
 
@@ -13,55 +13,47 @@ This guide provides two methods for installing abc on your system: a modern Pyth
 The recommended way to install abc is using pipx, which automatically manages virtual environments for command-line tools:
 
 1. Install pipx if you haven't already:
+
    ```bash
    python -m pip install --user pipx
    python -m pipx ensurepath
    ```
 
 2. Install abc directly from GitHub:
+
    ```bash
    pipx install git+https://github.com/alestic/abc.git
    ```
 
-3. Add the appropriate shell integration to your shell configuration file:
+3. Complete install setup
 
-   For bash users, add to `~/.bashrc`:
    ```bash
-   source "$HOME/.local/share/abc/abc.sh"
+   abc_setup
    ```
 
-   For zsh users, add to `~/.zshrc`:
-   ```zsh
-   source "$HOME/.local/share/abc/abc.sh"
-   ```
+   This will:
+   - Install shell integration scripts to ~/.local/share/abc
+   - Guide you through updating your shell configuration files
+   - Create backups of any modified files
+   - Provide instructions for API key configuration
 
-   For tcsh users, add to `~/.tcshrc`:
-   ```tcsh
-   source "$HOME/.local/share/abc/abc.tcsh"
-   ```
+   For non-interactive environments or to skip all prompts:
 
-   Then, reload your shell configuration:
-
-   For bash:
    ```bash
-   source ~/.bashrc
+   abc_setup --yes
    ```
 
-   For zsh:
-   ```zsh
-   source ~/.zshrc
-   ```
+4. Follow the printed instructions to:
 
-   For tcsh:
-   ```tcsh
-   source ~/.tcshrc
-   ```
+   - Reload your shell configuration
+   - Set up your API key configuration
 
 ## Legacy Installation (Make-based)
 
 The traditional make-based installation is still supported:
 
 1. Clone the repository:
+
    ```
    git clone https://github.com/alestic/abc.git
    cd abc
@@ -73,19 +65,22 @@ The traditional make-based installation is still supported:
    make build install
    ```
 
-3. Add the following line to your shell configuration file:
+3. Add the appropriate shell integration to your shell configuration file:
 
    For bash users, add to `~/.bashrc`:
+
    ```bash
    source "$HOME/.local/bin/abc.sh"
    ```
 
    For zsh users, add to `~/.zshrc`:
+
    ```zsh
    source "$HOME/.local/bin/abc.sh"
    ```
 
    For tcsh users, add to `~/.tcshrc`:
+
    ```tcsh
    source "$HOME/.local/bin/abc.tcsh"
    ```
@@ -93,16 +88,19 @@ The traditional make-based installation is still supported:
    Then, reload your shell configuration:
 
    For bash:
+
    ```bash
    source ~/.bashrc
    ```
 
    For zsh:
+
    ```zsh
    source ~/.zshrc
    ```
 
    For tcsh:
+
    ```tcsh
    source ~/.tcshrc
    ```
@@ -134,12 +132,16 @@ This should display the version of abc.
 ### Modern Installation
 
 To update abc to the latest version when installed via pipx:
+
 ```bash
 pipx upgrade abc-cli
+abc_setup  # --yes to skip prompts
 ```
 
 ### Legacy Installation
+
 To update abc when installed via make:
+
 ```bash
 git pull
 make build install
@@ -149,15 +151,27 @@ source ~/.bashrc  # or ~/.zshrc for zsh, or ~/.tcshrc for tcsh
 ## Uninstalling
 
 ### Modern Installation
+
 To uninstall abc when installed via pipx:
+
 ```bash
+abc_setup --uninstall  # --yes to skip prompts
 pipx uninstall abc-cli
 ```
 
+The uninstall process will:
+
+- Remove shell integration scripts
+- Remove source lines from shell configuration files
+- Create backups of any modified files
+- Remove the ~/.local/share/abc directory
+
 ### Legacy Installation
+
 To uninstall abc when installed via make:
+
 ```bash
 make uninstall
 ```
 
-Don't forget to remove the `source` line from your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.tcshrc`).
+Then remove the `source` line from your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.tcshrc`).

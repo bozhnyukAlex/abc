@@ -26,6 +26,12 @@ Repository = "https://github.com/alestic/abc.git"
 
 [project.scripts]
 abc_generate = "abc_cli.abc_generate:main"
+abc_setup = "abc_cli.abc_setup:main"
 
 [tool.hatch.build.targets.wheel]
 packages = ["abc_cli"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"abc_cli/abc.sh" = "abc_cli/abc.sh"
+"abc_cli/abc.tcsh" = "abc_cli/abc.tcsh"
+"abc_cli/abc.conf.template" = "abc_cli/abc.conf.template"
