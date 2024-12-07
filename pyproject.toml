@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "abc-cli"
+version = "2024.12.07"
+description = "AI bash/zsh/tcsh Command"
+readme = "README.md"
+requires-python = ">=3.8"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Claude 3.5 Sonnet", email = "" },
+    { name = "Eric Hammond", email = "" }
+]
+dependencies = [
+    "anthropic==0.40.0",
+    "readchar==4.1.0",
+    "distro==1.8.0",
+    "prompt_toolkit==3.0.47"
+]
+
+[project.urls]
+Homepage = "https://github.com/alestic/abc"
+Repository = "https://github.com/alestic/abc.git"
+
+[project.scripts]
+abc_generate = "abc_cli.abc_generate:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["abc_cli"]

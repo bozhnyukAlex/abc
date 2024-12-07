@@ -1,15 +1,65 @@
-# Installing abc (AI Bash Command)
+# Installing abc (AI bash/zsh/tcsh Command)
 
-This guide will walk you through the process of installing and setting up abc on your system.
+This guide provides two methods for installing abc on your system: a modern Python package installation using pipx, and the traditional make-based installation.
 
 ## Prerequisites
 
-- Python 3.7 or higher
-- pip (Python package installer)
+- Python 3.8 or higher
 - An API key for the Claude AI model from Anthropic
 - bash 4.4 or higher, or zsh 5.0 or higher, or tcsh 6.0 or higher
 
-## Installation Steps
+## Modern Installation (Recommended)
+
+The recommended way to install abc is using pipx, which automatically manages virtual environments for command-line tools:
+
+1. Install pipx if you haven't already:
+   ```bash
+   python -m pip install --user pipx
+   python -m pipx ensurepath
+   ```
+
+2. Install abc directly from GitHub:
+   ```bash
+   pipx install git+https://github.com/alestic/abc.git
+   ```
+
+3. Add the appropriate shell integration to your shell configuration file:
+
+   For bash users, add to `~/.bashrc`:
+   ```bash
+   source "$HOME/.local/share/abc/abc.sh"
+   ```
+
+   For zsh users, add to `~/.zshrc`:
+   ```zsh
+   source "$HOME/.local/share/abc/abc.sh"
+   ```
+
+   For tcsh users, add to `~/.tcshrc`:
+   ```tcsh
+   source "$HOME/.local/share/abc/abc.tcsh"
+   ```
+
+   Then, reload your shell configuration:
+
+   For bash:
+   ```bash
+   source ~/.bashrc
+   ```
+
+   For zsh:
+   ```zsh
+   source ~/.zshrc
+   ```
+
+   For tcsh:
+   ```tcsh
+   source ~/.tcshrc
+   ```
+
+## Legacy Installation (Make-based)
+
+The traditional make-based installation is still supported:
 
 1. Clone the repository:
    ```
@@ -57,11 +107,13 @@ This guide will walk you through the process of installing and setting up abc on
    source ~/.tcshrc
    ```
 
-4. Create an Anthropic API key:
+## Configuration
 
+1. Create an Anthropic API key:
    https://console.anthropic.com/settings/keys
 
-5. Create a configuration file at `~/.abc.conf` with your API key:
+2. Create a configuration file at `~/.abc.conf` with your API key:
+
    ```ini
    [default]
    api_key = your_api_key_here
@@ -79,22 +131,33 @@ This should display the version of abc.
 
 ## Updating
 
-To update abc to the latest version, pull the latest changes from the repository and reinstall:
+### Modern Installation
 
+To update abc to the latest version when installed via pipx:
+```bash
+pipx upgrade abc-cli
 ```
+
+### Legacy Installation
+To update abc when installed via make:
+```bash
 git pull
 make build install
-source ~/.bashrc  # or source ~/.zshrc for zsh users, or source ~/.tcshrc for tcsh users
+source ~/.bashrc  # or ~/.zshrc for zsh, or ~/.tcshrc for tcsh
 ```
 
 ## Uninstalling
 
-To uninstall abc:
-
+### Modern Installation
+To uninstall abc when installed via pipx:
+```bash
+pipx uninstall abc-cli
 ```
+
+### Legacy Installation
+To uninstall abc when installed via make:
+```bash
 make uninstall
 ```
 
-This will remove the abc_generate executable and the abc.sh and abc.tcsh scripts.
-
-Don't forget to remove the `source` line from your `~/.bashrc`, `~/.zshrc`, or `~/.tcshrc` file.
+Don't forget to remove the `source` line from your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.tcshrc`).
