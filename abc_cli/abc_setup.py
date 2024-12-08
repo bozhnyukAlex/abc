@@ -9,6 +9,7 @@ import argparse
 import importlib.resources
 import logging
 import os
+import re
 import shutil
 import sys
 import time
@@ -21,6 +22,14 @@ logging.basicConfig(
     datefmt='%Y-%m-%d %H:%M:%S',
     level=logging.INFO
 )
+
+# Marker lines for shell configuration
+MARKER_BEGIN = "# >>> abc initialize >>>"
+MARKER_MIDDLE = "# !! Contents within this block are managed by 'abc_setup' !!"
+MARKER_END = "# <<< abc initialize <<<"
+
+# Global timestamp for backups
+BACKUP_TIMESTAMP = datetime.now().strftime('%Y%m%d_%H%M%S')
 
 def is_interactive():
     """Check if we're running interactively."""
@@ -40,12 +49,11 @@ def prompt_user(message, default=True):
         print("Please answer 'y' or 'n'")
 
 def backup_file(file_path):
-    """Create a backup of a file with timestamp."""
+    """Create a backup of a file with the global timestamp."""
     if not file_path.exists():
         return None
 
-    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_path = file_path.with_suffix(f'.bak_{timestamp}')
+    backup_path = file_path.with_suffix(f'.bak_{BACKUP_TIMESTAMP}')
     shutil.copy2(file_path, backup_path)
     return backup_path
 
@@ -64,22 +72,22 @@ def get_shell_rc_files():
         'tcsh': home / '.tcshrc'
     }
 
-def check_source_line(file_path, source_line):
-    """Check if source line exists in file."""
+def check_source_block(file_path):
+    """Check if source block exists in file."""
     if not file_path.exists():
         return False
 
     with open(file_path, 'r') as f:
         content = f.read()
-        return source_line in content
+        return MARKER_BEGIN in content
 
 def add_source_line(file_path, source_line, yes=False):
     """Add source line to shell rc file."""
-    if check_source_line(file_path, source_line):
-        logging.info(f"Source line already exists in {file_path}")
+    if check_source_block(file_path):
+        logging.info(f"Source block already exists in {file_path}")
         return True
 
-    message = f"\nWould you like to add the following line to {file_path}?\n"
+    message = f"\nWould you like to add abc shell integration to {file_path}?\n"
     message += f"  {source_line}\n"
     message += "This is needed for shell integration."
 
@@ -95,22 +103,25 @@ def add_source_line(file_path, source_line, yes=False):
     # Create file if it doesn't exist
     file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Add source line
+    # Add source block
     mode = 'a' if file_path.exists() else 'w'
     with open(file_path, mode) as f:
         if mode == 'a':
             f.write('\n')  # Add newline before our content
+        f.write(f"{MARKER_BEGIN}\n")
+        f.write(f"{MARKER_MIDDLE}\n")
         f.write(f"{source_line}\n")
+        f.write(f"{MARKER_END}\n")
 
     logging.info(f"Updated {file_path}")
     return True
 
-def remove_source_line(file_path, source_line):
-    """Remove source line from shell rc file."""
+def remove_source_block(file_path):
+    """Remove source block from shell rc file."""
     if not file_path.exists():
         return True
 
-    if not check_source_line(file_path, source_line):
+    if not check_source_block(file_path):
         return True
 
     # Backup file before modifying
@@ -118,16 +129,28 @@ def remove_source_line(file_path, source_line):
     if backup:
         logging.info(f"Created backup: {backup}")
 
-    # Remove source line
+    # Read file content
     with open(file_path, 'r') as f:
         lines = f.readlines()
 
-    with open(file_path, 'w') as f:
-        for line in lines:
-            if source_line not in line:
-                f.write(line)
+    # Find and remove the block
+    in_block = False
+    new_lines = []
+    for line in lines:
+        if MARKER_BEGIN in line:
+            in_block = True
+            continue
+        elif MARKER_END in line:
+            in_block = False
+            continue
+        elif not in_block:
+            new_lines.append(line)
 
-    logging.info(f"Removed source line from {file_path}")
+    # Write back the file without the block
+    with open(file_path, 'w') as f:
+        f.writelines(new_lines)
+
+    logging.info(f"Removed source block from {file_path}")
     return True
 
 def get_venv_python():
@@ -155,15 +178,13 @@ def uninstall(yes=False):
             print("Uninstall cancelled")
             return 0
 
-        # Remove source lines from rc files
-        share_dir = Path.home() / '.local' / 'share' / 'abc'
+        # Remove source blocks from rc files
         rc_files = get_shell_rc_files()
-
-        for shell, rc_file in rc_files.items():
-            source_line = f'source "{share_dir}/abc.{shell}"'
-            remove_source_line(rc_file, source_line)
+        for rc_file in rc_files.values():
+            remove_source_block(rc_file)
 
         # Remove ~/.local/share/abc directory
+        share_dir = Path.home() / '.local' / 'share' / 'abc'
         if share_dir.exists():
             shutil.rmtree(share_dir)
             logging.info(f"Removed directory: {share_dir}")
