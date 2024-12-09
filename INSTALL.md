@@ -1,177 +1,115 @@
 # Installing abc (AI bash/zsh/tcsh Command)
 
-This guide provides two methods for installing abc on your system: a modern Python package installation using pipx (recommended), and the traditional make-based installation.
+This guide provides instructions for installing abc on your system using pipx.
 
 ## Prerequisites
 
+- Linux or macOS
 - Python 3.8 or higher
+- bash 4.4+, zsh 5.0+, or tcsh 6.0+
 - An API key for the Claude AI model from Anthropic
-- bash 4.4 or higher, or zsh 5.0 or higher, or tcsh 6.0 or higher
 
-## Modern Installation (Recommended)
-
-The recommended way to install abc is using pipx, which automatically manages virtual environments for command-line tools:
+## Installation
 
 1. Install pipx if you haven't already:
 
    ```bash
-   python -m pip install --user pipx
-   python -m pipx ensurepath
+   # Linux (apt-based)
+   sudo apt install pipx
+   pipx ensurepath
+
+   # macOS
+   brew install pipx
+   pipx ensurepath
+
+   # Alternative: using pip
+   python3 -m pip install --user pipx
+   python3 -m pipx ensurepath
    ```
 
-2. Install abc directly from GitHub:
+2. Install abc:
 
    ```bash
    pipx install git+https://github.com/alestic/abc.git
+   abc_setup
    ```
 
-3. Complete install setup
+   Alternative:
 
    ```bash
+   git clone https://github.com/alestic/abc.git
+   cd abc
+   pipx install .
    abc_setup
    ```
 
    This will:
-   - Install shell integration scripts to ~/.local/share/abc
-   - Guide you through updating your shell configuration files
+   - Install shell integration scripts
+   - Update your shell configuration
+   - Guide you through API key setup
    - Create backups of any modified files
-   - Provide instructions for API key configuration
 
-   For non-interactive environments or to skip all prompts:
-
-   ```bash
-   abc_setup --yes
-   ```
-
-4. Follow the printed instructions to:
-
-   - Reload your shell configuration
-   - Set up your API key configuration
-
-## Legacy Installation (Make-based)
-
-The traditional make-based installation is still supported:
-
-1. Clone the repository:
-
-   ```
-   git clone https://github.com/alestic/abc.git
-   cd abc
-   ```
-
-2. Build dependencies and install in $HOME/.local/bin/
-
-   ```
-   make build install
-   ```
-
-3. Add the appropriate shell integration to your shell configuration file:
-
-   For bash users, add to `~/.bashrc`:
+3. Start a new terminal or reload your shell configuration:
 
    ```bash
-   source "$HOME/.local/bin/abc.sh"
-   ```
-
-   For zsh users, add to `~/.zshrc`:
-
-   ```zsh
-   source "$HOME/.local/bin/abc.sh"
-   ```
-
-   For tcsh users, add to `~/.tcshrc`:
-
-   ```tcsh
-   source "$HOME/.local/bin/abc.tcsh"
-   ```
-
-   Then, reload your shell configuration:
-
-   For bash:
-
-   ```bash
+   # For bash
    source ~/.bashrc
-   ```
 
-   For zsh:
-
-   ```zsh
+   # For zsh
    source ~/.zshrc
-   ```
 
-   For tcsh:
-
-   ```tcsh
+   # For tcsh
    source ~/.tcshrc
-   ```
-
-## Configuration
-
-1. Create an Anthropic API key:
-   https://console.anthropic.com/settings/keys
-
-2. Create a configuration file at `~/.abc.conf` with your API key:
-
-   ```ini
-   [default]
-   api_key = your_api_key_here
    ```
 
 ## Verifying the Installation
 
-To verify that abc is installed correctly, run:
+To verify that abc is installed correctly:
 
-```
+```bash
 abc --version
+abc hi
 ```
-
-This should display the version of abc.
 
 ## Updating
 
-### Modern Installation
-
-To update abc to the latest version when installed via pipx:
+To update abc to the latest version:
 
 ```bash
 pipx upgrade abc-cli
-abc_setup  # --yes to skip prompts
-```
-
-### Legacy Installation
-
-To update abc when installed via make:
-
-```bash
-git pull
-make build install
-source ~/.bashrc  # or ~/.zshrc for zsh, or ~/.tcshrc for tcsh
+abc_setup
 ```
 
 ## Uninstalling
 
-### Modern Installation
-
-To uninstall abc when installed via pipx:
+To remove abc from your system:
 
 ```bash
-abc_setup --uninstall  # --yes to skip prompts
+abc_setup --uninstall
 pipx uninstall abc-cli
 ```
 
-The uninstall process will:
+## Files and Locations
 
-- Remove shell integration scripts
-- Remove source lines from shell configuration files
-- Create backups of any modified files
-- Remove the ~/.local/share/abc directory
+- Shell integration: `~/.local/share/abc/`
+- Configuration: `~/.abc.conf`
+- Shell configuration:
+  - bash: `~/.bashrc`
+  - zsh: `~/.zshrc`
+  - tcsh: `~/.tcshrc`
 
-### Legacy Installation
+## Troubleshooting
 
-To uninstall abc when installed via make:
+1. If you see "command not found: pipx" after installation:
+   - Run: `pipx ensurepath`
+   - Start a new terminal
 
-```bash
-make uninstall
-```
+2. If abc commands don't work after installation:
+   - Ensure your shell configuration was sourced
+   - Check that `~/.abc.conf` exists and contains your API key
+   - Verify the shell integration with `type abc`
 
-Then remove the `source` line from your shell configuration file (`~/.bashrc`, `~/.zshrc`, or `~/.tcshrc`).
+3. For other issues:
+   - Check the error message
+   - Verify Python version: `python3 --version`
+   - Ensure shell version meets requirements

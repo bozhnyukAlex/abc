@@ -25,7 +25,7 @@ import re
 import anthropic
 import distro
 
-VERSION: str = "# 2024-07-31"
+VERSION: str = "# 2024-12-07"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -37,7 +37,7 @@ LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
 LOG_FORMAT_DATE: str = '%Y-%m-%d %H:%M:%S'
 
 # LLM Constants
-LLM_MODEL: str = "claude-3-5-sonnet-20240620"
+LLM_MODEL: str = "claude-3-5-sonnet-20241022"
 LLM_TEMPERATURE: float = 0.0
 LLM_MAX_TOKENS: int = 1000
 

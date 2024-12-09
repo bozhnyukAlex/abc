@@ -36,28 +36,25 @@ def is_interactive():
     """Check if we're running interactively."""
     return sys.stdin.isatty()
 
-def prompt_user(message):
+def prompt_user(message, default=True):
     """Prompt user for yes/no confirmation."""
     if not is_interactive():
-        return True
+        return default
 
-    response = input(f"{message} [Y/n] ").lower().strip()
-    return response in ['', 'y', 'yes']
+    prompt = " [Y/n] " if default else " [y/N] "
+    response = input(f"{message}{prompt}").lower().strip()
+    if not response:
+        return default
+    return response in ['y', 'yes']
 
-def backup_files(files, timestamp):
-    """Create backups of multiple files with the same timestamp."""
-    backups = []
-    for file_path in files:
-        if not file_path.exists():
-            continue
-        backup_path = file_path.with_suffix(f'.bak_{timestamp}')
-        shutil.copy2(file_path, backup_path)
-        backups.append(backup_path)
-        logging.info(f"Created backup: {backup_path}")
-    return backups
+def backup_file(file_path, timestamp):
+    """Create a backup of a file with timestamp."""
+    backup_path = file_path.with_suffix(f'.bak_{timestamp}')
+    shutil.copy2(file_path, backup_path)
+    logging.info(f"Created backup: {backup_path}")
 
 def modify_rc_file(file_path, source_line, remove=False):
-    """Add or remove source block from rc file."""
+    """Add or remove source block from rc file. Returns True if file was modified."""
     file_path = Path.home() / file_path
 
     # Read existing content
@@ -71,13 +68,17 @@ def modify_rc_file(file_path, source_line, remove=False):
         # Remove existing block
         new_content = []
         in_block = False
+        found_block = False
         for line in content:
             if MARKER_BEGIN in line:
                 in_block = True
+                found_block = True
             elif MARKER_END in line:
                 in_block = False
             elif not in_block:
                 new_content.append(line)
+        if not found_block:
+            return False
         content = new_content
     else:
         # Check if block already exists
@@ -105,18 +106,16 @@ def setup_config(yes=False):
     """Set up abc configuration file with API key."""
     config_file = Path.home() / '.abc.conf'
 
-    if config_file.exists():
-        if not yes and not prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?"):
-            return True
-        # Backup existing config
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        backup_files([config_file], timestamp)
-
-    if not yes and not prompt_user("\nWould you like to set up the abc configuration file?"):
-        print("Configuration setup skipped")
+    # Check if we should configure
+    if config_file.exists() and not (yes or prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?")):
         return True
 
     try:
+        # Backup existing config if it exists
+        if config_file.exists():
+            timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+            backup_file(config_file, timestamp)
+
         # Get the template content
         with importlib.resources.path('abc_cli', 'abc.conf.template') as template_path:
             with open(template_path, 'r') as f:
@@ -189,7 +188,7 @@ def setup_shell_scripts(yes=False):
             source_line = f'source "{share_dir}/abc.{shell if shell == "tcsh" else "sh"}"'
             if modify_rc_file(rc_file, source_line):
                 modified = True
-                backup_files([Path.home() / rc_file], timestamp)
+                backup_file(Path.home() / rc_file, timestamp)
 
         if modified:
             print("\nShell configuration files have been updated.")
@@ -213,24 +212,32 @@ def setup_shell_scripts(yes=False):
 
 def uninstall(yes=False):
     """Remove shell integration scripts and package files."""
-    if not yes and not prompt_user("\nThis will remove abc shell integration files and configuration. Continue?"):
+    if not yes and not prompt_user("\nThis will remove abc shell integration files. Continue?"):
         print("Uninstall cancelled")
         return 0
 
     try:
-        # Backup and remove rc file modifications
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-        rc_files = [Path.home() / rc_file for rc_file in SHELL_RC_FILES.values()]
-        backup_files(rc_files, timestamp)
+        modified = False
 
+        # Remove source blocks from rc files
         for rc_file in SHELL_RC_FILES.values():
-            modify_rc_file(rc_file, '', remove=True)
+            if modify_rc_file(rc_file, '', remove=True):
+                modified = True
+                backup_file(Path.home() / rc_file, timestamp)
 
         # Remove ~/.local/share/abc directory
         share_dir = Path.home() / '.local' / 'share' / 'abc'
         if share_dir.exists():
             shutil.rmtree(share_dir)
             logging.info(f"Removed directory: {share_dir}")
+
+        # Optionally remove configuration
+        config_file = Path.home() / '.abc.conf'
+        if config_file.exists() and prompt_user("\nWould you like to remove the configuration file (~/.abc.conf)?", default=False):
+            backup_file(config_file, timestamp)
+            config_file.unlink()
+            logging.info("Removed configuration file")
 
         print("\nUninstallation complete. You may now run:")
         print("pipx uninstall abc-cli")
