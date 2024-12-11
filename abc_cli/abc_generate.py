@@ -3,8 +3,9 @@
 
 abc_generate - AI Bash Command Generator
 
-Source and documentation:
+Website, source code, and documentation:
 
+  https://getabc.sh
   https://github.com/alestic/abc
 
 Credits:
@@ -25,7 +26,7 @@ import re
 import anthropic
 import distro
 
-VERSION: str = "# 2024-12-07"
+VERSION: str = "# 2024.12.09"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -99,22 +100,69 @@ def get_config(config_file_path: str) -> Dict[str, str]:
     first_section = config.sections()[0]
     return dict(config[first_section])
 
-def get_system_prompt(shell: str):
-    return f"""You are an expert in {shell} commands for {get_os_info()}.
-Given a description, generate the appropriate {shell} command(s) to accomplish the task.
-Provide only the command(s) without any explanation.
-Ensure the output can be directly copied and pasted into a terminal.
-Use {get_os_info()}-specific commands when appropriate and {shell}-specific syntax.
-Important: The entire command must be on a single line. Use semicolons or && to separate multiple commands if necessary.
-After generating the command, evaluate its danger level and add it on a new line in this format:
-##DANGERLEVEL=X## [justification]
-Where X is:
-0 = Read only, informational command.
-1 = Modifies the system in common ways or generates some standard side effects.
-2 = Potential loss of significant data or large side effects. Should be reviewed carefully.
-Provide a brief justification for the danger level assigned."""
+def get_system_prompt(os_info: str, shell: str):
+    return f"""<purpose>
+    You are an expert in {shell} shell commands for {os_info}.
+    Given a natural language description, generate the appropriate {shell} command(s) to accomplish the task.
+</purpose>
 
-def generate_command(description: str, api_key: str, shell: str) -> str:
+<instructions>
+    <instruction>Generate only the exact {shell} shell command without explanations or preamble.</instruction>
+    <instruction>Important: All commands must be on a single-line.</instruction>
+    <instruction>Use techniques like semicolons, &&, ||, and pipes to separate multiple commands on the single line.</instruction>
+    <instruction>Ensure the output command can be directly copied and pasted into a terminal.</instruction>
+    <instruction>Use {shell}-specific syntax.</instruction>
+    <instruction>Use commands specific to {os_info} when appropriate.</instruction>
+    <instruction>Aim for elegance and simplicity.</instruction>
+    <instruction>Consider and handle edge cases (e.g., dot files, whitespace, missing/existing files).</instruction>
+    <instruction>Consider and handle unusual environment conditions (e.g., user-defined aliases, environment variables)</instruction>
+    <instruction>After generating the command line, evaluate its danger/risk level and add it on the second line in this format: ##DANGERLEVEL=[[CODE]]## [[justification]]</instruction>
+</instructions>
+
+<danger-levels>
+    <level code="0">Read only, informational command.</level>
+    <level code="1">Modifies the system in common ways or generates standard side effects.</level>
+    <level code="2">Potential loss of significant data or large/harmful side effects. Should be reviewed carefully.</level>
+</danger-levels>
+
+<examples>
+    <example>
+        <input>
+            Description: find the longest python filename
+        </input>
+        <output>
+<![CDATA[
+find . -name "*.py" -type f -printf "%f\n" | awk '{{print length, $0}}' | sort -rn | head -1 | cut -d' ' -f2-
+##DANGERLEVEL=0## Reading file info, no changes made.
+]]>
+        </output>
+    </example>
+    <example>
+        <input>
+            Description: copy subdir1 contents to subdir2
+        </input>
+        <output>
+<![CDATA[
+cp --archive --interactive subdir1/ subdir2/
+##DANGERLEVEL=1## Can overwrite existing files in subdir2 with files from subdir1, potentially causing data loss in the destination directory
+]]>
+        </output>
+    </example>
+    <example>
+        <input>
+            Description: delete all system log files
+        </input>
+        <output>
+<![CDATA[
+sudo rm -rf /var/log/*
+##DANGERLEVEL=2## Highly destructive command that removes critical system logs. Will impact system monitoring, troubleshooting, and security auditing. Could prevent diagnosis of system issues and hide security breaches.
+]]>
+        </output>
+    </example>
+</examples>
+"""
+
+def generate_command(description: str, api_key: str, os_info: str, shell: str) -> str:
     """Generate a command using the LLM based on the given description and shell."""
     client = anthropic.Anthropic(api_key=api_key)
 
@@ -122,7 +170,7 @@ def generate_command(description: str, api_key: str, shell: str) -> str:
         model=LLM_MODEL,
         max_tokens=LLM_MAX_TOKENS,
         temperature=LLM_TEMPERATURE,
-        system=get_system_prompt(shell),
+        system=get_system_prompt(os_info, shell),
         messages=[
             {
                 "role": "user",
@@ -136,19 +184,9 @@ def generate_command(description: str, api_key: str, shell: str) -> str:
         ]
     )
 
+    logging.debug(f"Response message: {message}")
+
     return message.content[0].text.strip()
-
-def process_command(description: List[str], config: Dict[str, str], shell: str) -> str:
-    """Process the command description and generate command."""
-    if not description:
-        raise ValueError("No description provided")
-    description_text = " ".join(description)
-    logging.info(f"Generating {shell} command for: {description_text}")
-
-    if 'api_key' not in config:
-        raise ValueError("API key not found in configuration")
-
-    return generate_command(description_text, config['api_key'], shell)
 
 def process_generated_command(command: str) -> str:
     """Process the generated command based on its danger level."""
@@ -190,7 +228,7 @@ def main() -> int:
 
         logging.info(f"Generating {args.shell} command for: {description}")
 
-        raw_command = generate_command(description, config['api_key'], args.shell)
+        raw_command = generate_command(description, config['api_key'], get_os_info(), args.shell)
         processed_command = process_generated_command(raw_command)
         print(processed_command)
 

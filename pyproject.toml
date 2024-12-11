@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-cli"
-version = "2024.12.07"
+version = "2024.12.09"
 description = "AI bash/zsh/tcsh Command"
 readme = "README.md"
 requires-python = ">=3.8"
