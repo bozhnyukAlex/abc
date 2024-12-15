@@ -36,9 +36,9 @@ def is_interactive():
     """Check if we're running interactively."""
     return sys.stdin.isatty()
 
-def prompt_user(message, default=True):
+def prompt_user(message, default=True, no_prompt=False):
     """Prompt user for yes/no confirmation."""
-    if not is_interactive():
+    if no_prompt or not is_interactive():
         return default
 
     prompt = " [Y/n] " if default else " [y/N] "
@@ -102,12 +102,12 @@ def modify_rc_file(file_path, source_line, remove=False):
 
     return True
 
-def setup_config(yes=False):
+def setup_config(no_prompt=False):
     """Set up abc configuration file with API key."""
     config_file = Path.home() / '.abc.conf'
 
     # Check if we should configure
-    if config_file.exists() and not (yes or prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?")):
+    if config_file.exists() and not prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?", default=False, no_prompt=no_prompt):
         return True
 
     try:
@@ -144,9 +144,9 @@ def setup_config(yes=False):
         logging.error(f"Configuration setup failed: {e}")
         return False
 
-def setup_shell_scripts(yes=False):
+def setup_shell_scripts(no_prompt=False):
     """Setup shell integration scripts and configuration template."""
-    if not yes and not prompt_user("\nThis will set up abc shell integration. Continue?"):
+    if not prompt_user("\nAbout to add abc files to $HOME/.local/share/ Continue?", no_prompt=no_prompt):
         print("Setup cancelled")
         return 0
 
@@ -180,6 +180,10 @@ def setup_shell_scripts(yes=False):
         shutil.copy2(template_source, template_target)
         logging.info(f"Installed: {template_target}")
 
+        if not prompt_user("\nAbout to add abc commands to shell rc files. Continue?", no_prompt=no_prompt):
+            print("Setup cancelled")
+            return 0
+
         # Update shell rc files
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         modified = False
@@ -200,7 +204,7 @@ def setup_shell_scripts(yes=False):
             print("   For tcsh:  source ~/.tcshrc")
 
         # Set up configuration
-        if not setup_config(yes):
+        if not setup_config(no_prompt):
             print("\nWarning: Configuration setup failed. You will need to manually configure ~/.abc.conf")
             print(f"You can use {share_dir}/abc.conf.template as a template")
 
@@ -210,9 +214,9 @@ def setup_shell_scripts(yes=False):
         logging.error(f"Setup failed: {e}")
         return 1
 
-def uninstall(yes=False):
+def uninstall(no_prompt=False):
     """Remove shell integration scripts and package files."""
-    if not yes and not prompt_user("\nThis will remove abc shell integration files. Continue?"):
+    if not prompt_user("\nAbout to remove abc shell integration files. Continue?", no_prompt=no_prompt):
         print("Uninstall cancelled")
         return 0
 
@@ -234,7 +238,7 @@ def uninstall(yes=False):
 
         # Optionally remove configuration
         config_file = Path.home() / '.abc.conf'
-        if config_file.exists() and prompt_user("\nWould you like to remove the configuration file (~/.abc.conf)?", default=False):
+        if config_file.exists() and prompt_user("\nWould you like to remove the configuration file (~/.abc.conf)?", default=False, no_prompt=no_prompt):
             backup_file(config_file, timestamp)
             config_file.unlink()
             logging.info("Removed configuration file")
@@ -253,15 +257,15 @@ def main():
     parser = argparse.ArgumentParser(description="Setup abc shell integration")
     parser.add_argument('--uninstall', action='store_true',
                       help="Remove shell integration scripts")
-    parser.add_argument('--yes', '-y', action='store_true',
-                      help="Answer yes to all prompts")
+    parser.add_argument('--no-prompt', action='store_true',
+                      help="Skip all prompts and use default values")
     args = parser.parse_args()
 
     try:
         if args.uninstall:
-            return uninstall(args.yes or not is_interactive())
+            return uninstall(args.no_prompt)
         else:
-            return setup_shell_scripts(args.yes or not is_interactive())
+            return setup_shell_scripts(args.no_prompt)
     except KeyboardInterrupt:
         print("\nOperation cancelled by user")
         return 1
