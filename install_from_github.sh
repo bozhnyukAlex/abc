@@ -7,6 +7,8 @@ set -u  # Exit on undefined variable
 # Default values
 NO_PROMPT=false
 NO_PROMPT_OPTION=
+FORCE=false
+FORCE_OPTION=
 
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
@@ -14,6 +16,11 @@ while [[ $# -gt 0 ]]; do
         --no-prompt)
             NO_PROMPT=true
             NO_PROMPT_OPTION="--no-prompt"
+            shift
+            ;;
+        --force)
+            FORCE=true
+            FORCE_OPTION="--force"
             shift
             ;;
         *)
@@ -144,7 +151,7 @@ main() {
     # Install abc
     log "Installing abc from GitHub..."
     if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
-        pipx install git+https://github.com/alestic/abc.git || error "Failed to install abc via pipx"
+        pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
     else
         log "Installation cancelled by user"
         exit 0
