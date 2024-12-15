@@ -18,7 +18,7 @@ Examples:
   # Remove shell integration
   abc_setup --uninstall
 
-  # Non-interactive uninstall
+  # Non-interactive uninstall (leaves configuration file in place)
   abc_setup --uninstall --no-prompt
 """
 
@@ -237,7 +237,7 @@ def setup_shell_scripts(no_prompt=False):
             print("2. Run one of these commands in your current terminal:")
             for shell in found_shells:
                 rc_file = SHELL_RC_FILES[shell]
-                print(f"   For {shell}:  source ~/.{rc_file}")
+                print(f"   For {shell}:  source ~/{rc_file}")
 
         # Set up configuration
         if not setup_config(no_prompt):
