@@ -26,7 +26,7 @@ import re
 import anthropic
 import distro
 
-VERSION: str = "# 2024.12.09"
+VERSION: str = "# 2024.12.15"
 PROGRAM_NAME: str = "abc"
 
 # Config file
