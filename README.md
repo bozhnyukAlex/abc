@@ -255,7 +255,26 @@ Always review these warnings and dangerous commands carefully before execution.
 
 ## Contributing
 
-Pull requests and bug reports are unlikely to be reviewed, incorporated, or fixed. You are welcome to fork the project and publish updates.
+We want to keep abc tightly focused, but will review feedback in GitHub.
+
+### Issue Reports
+
+- Before submitting a new issue, search existing issues to avoid duplicates
+- Provide clear, detailed descriptions of the problem
+- For bugs, include:
+  - Steps to reproduce
+  - Expected vs actual behavior
+  - Your environment (OS, shell, abc version)
+  - Any relevant configuration settings; do not include API keys!
+- For feature requests, explain the use case and benefits
+
+### Pull Requests
+
+- Before spending time on a PR that might not be accepted, submit an issue for discussion
+- Keep changes small and focused - one feature or fix per PR
+- Follow the existing code style and conventions
+- Update documentation as needed
+- Provide a clear description of the changes and their purpose
 
 ## License
 

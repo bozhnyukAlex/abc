@@ -11,15 +11,23 @@ This guide provides instructions for installing abc on your system using pipx.
 
 ## Installation
 
-1. Install pipx if you haven't already:
+1. Install pipx, if you haven't already:
 
    ```bash
-   # Linux (apt-based)
+   # macOS
+   brew install pipx
+   pipx ensurepath
+
+   # Ubuntu 23.04 or above
    sudo apt install pipx
    pipx ensurepath
 
-   # macOS
-   brew install pipx
+   # Fedora
+   sudo dnf install pipx
+   pipx ensurepath
+
+   # Arch
+   sudo pacman -S python-pipx
    pipx ensurepath
 
    # Alternative: using pip
@@ -27,7 +35,9 @@ This guide provides instructions for installing abc on your system using pipx.
    python3 -m pipx ensurepath
    ```
 
-2. Install abc:
+2. Install abc using pipx:
+
+   From GitHub:
 
    ```bash
    pipx install git+https://github.com/alestic/abc.git

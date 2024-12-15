@@ -112,6 +112,16 @@ install_pipx() {
             exit 0
         fi
 
+    elif command -v pacman &> /dev/null; then
+        log "Detected Arch Linux - Installing pipx via pacman..."
+        if [[ "$(prompt_user "About to install pipx via pacman. This requires sudo access. Continue?" "y")" = "yes" ]]; then
+            sudo pacman -S --noconfirm python-pipx || error "Failed to install pipx via pacman"
+        else
+            log "Installation cancelled by user"
+            exit 0
+        fi
+
+
     elif command -v yum &> /dev/null; then
         log "Detected older RedHat/CentOS - Installing pipx via yum..."
         if [[ "$(prompt_user "About to install pipx via yum. This requires sudo access. Continue?" "y")" = "yes" ]]; then
