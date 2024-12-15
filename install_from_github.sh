@@ -163,7 +163,7 @@ main() {
 
     # Ensure pipx is in PATH
     log "Ensuring pipx apps are in PATH..."
-    pipx ensurepath || error "Failed to ensure pipx apps are in PATH"
+    pipx ensurepath -q || error "Failed to ensure pipx apps are in PATH"
 
     # Install abc
     log "Installing abc from GitHub..."
