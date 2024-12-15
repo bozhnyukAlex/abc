@@ -30,6 +30,7 @@ import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
+import getpass
 
 # Constants
 SHELL_RC_FILES = {
@@ -49,15 +50,18 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def get_terminal_input(prompt='', default=None):
+def get_terminal_input(prompt='', default=None, sensitive=False):
     """Get user input from terminal, handling both interactive and non-interactive cases."""
     if not sys.stderr.isatty():
         return default
 
     print(prompt, end='', file=sys.stderr, flush=True)
     try:
-        with open('/dev/tty', 'r') as tty:
-            response = tty.readline().strip()
+        if sensitive:
+            response = getpass.getpass(prompt='')
+        else:
+            with open('/dev/tty', 'r') as tty:
+                response = tty.readline().strip()
     except (OSError, IOError):
         print(file=sys.stderr)
         return default
@@ -159,7 +163,7 @@ def setup_config(no_prompt=False):
         # Prompt for API key if interactive
         print("\nPlease enter your Anthropic API key", file=sys.stderr)
         print("(You can get this from https://console.anthropic.com/settings/keys)", file=sys.stderr)
-        api_key = get_terminal_input("API key: ", '{ANTHROPIC_API_KEY}')
+        api_key = get_terminal_input("API key: ", '{ANTHROPIC_API_KEY}', sensitive=True)
 
         # Write configuration
         config_content = template_content.replace('{ANTHROPIC_API_KEY}', api_key)
