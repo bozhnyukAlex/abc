@@ -84,11 +84,14 @@ def modify_rc_file(file_path, source_line, remove=False):
     """Add or remove source block from rc file. Returns True if file was modified."""
     file_path = Path.home() / file_path
 
+    # Check if file exists
+    if not file_path.exists():
+        logging.info(f"Skipping {file_path}: file not found")
+        return False
+
     # Read existing content
-    content = []
-    if file_path.exists():
-        with open(file_path, 'r') as f:
-            content = f.readlines()
+    with open(file_path, 'r') as f:
+        content = f.readlines()
 
     # Process content
     if remove:
@@ -110,6 +113,7 @@ def modify_rc_file(file_path, source_line, remove=False):
     else:
         # Check if block already exists
         if any(MARKER_BEGIN in line for line in content):
+            logging.info(f"Skipping {file_path}: abc block already exists")
             return False
 
         # Add new block
@@ -123,9 +127,13 @@ def modify_rc_file(file_path, source_line, remove=False):
         ])
 
     # Write back
-    file_path.parent.mkdir(parents=True, exist_ok=True)
     with open(file_path, 'w') as f:
         f.writelines(content)
+
+    if remove:
+        logging.info(f"Removed abc block from {file_path}")
+    else:
+        logging.info(f"Added abc block to {file_path}")
 
     return True
 
@@ -208,21 +216,28 @@ def setup_shell_scripts(no_prompt=False):
         # Update shell rc files
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         modified = False
+        found_shells = []
 
         for shell, rc_file in SHELL_RC_FILES.items():
             source_line = f'source "{share_dir}/abc.{shell if shell == "tcsh" else "sh"}"'
+            rc_path = Path.home() / rc_file
+            if not rc_path.exists():
+                continue
+            found_shells.append(shell)
             if modify_rc_file(rc_file, source_line):
                 modified = True
-                backup_file(Path.home() / rc_file, timestamp)
+                backup_file(rc_path, timestamp)
 
         if modified:
             print("\nShell configuration files have been updated.")
-            print("To activate the changes, either:")
+
+        if found_shells:
+            print("\nTo activate the changes, either:")
             print("1. Start a new terminal, or")
             print("2. Run one of these commands in your current terminal:")
-            print("   For bash:  source ~/.bashrc")
-            print("   For zsh:   source ~/.zshrc")
-            print("   For tcsh:  source ~/.tcshrc")
+            for shell in found_shells:
+                rc_file = SHELL_RC_FILES[shell]
+                print(f"   For {shell}:  source ~/.{rc_file}")
 
         # Set up configuration
         if not setup_config(no_prompt):
@@ -244,12 +259,25 @@ def uninstall(no_prompt=False):
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         modified = False
+        found_shells = []
 
         # Remove source blocks from rc files
-        for rc_file in SHELL_RC_FILES.values():
+        for shell, rc_file in SHELL_RC_FILES.items():
+            rc_path = Path.home() / rc_file
+            if not rc_path.exists():
+                continue
+            found_shells.append(shell)
             if modify_rc_file(rc_file, '', remove=True):
                 modified = True
-                backup_file(Path.home() / rc_file, timestamp)
+                backup_file(rc_path, timestamp)
+
+        if found_shells:
+            print("\nTo complete uninstallation, either:")
+            print("1. Start a new terminal, or")
+            print("2. Run one of these commands in your current terminal:")
+            for shell in found_shells:
+                rc_file = SHELL_RC_FILES[shell]
+                print(f"   For {shell}:  source ~/.{rc_file}")
 
         # Remove ~/.local/share/abc directory
         share_dir = Path.home() / '.local' / 'share' / 'abc'
