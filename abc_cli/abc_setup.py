@@ -3,6 +3,23 @@
 abc_setup - Setup script for abc shell integration
 
 This script manages shell integration scripts and configuration for abc.
+
+Command line options:
+  --uninstall   Remove shell integration scripts and optionally configuration
+  --no-prompt   Skip all prompts and use default values (useful for automation)
+
+Examples:
+  # Normal installation with prompts
+  abc_setup
+
+  # Non-interactive installation with defaults
+  abc_setup --no-prompt
+
+  # Remove shell integration
+  abc_setup --uninstall
+
+  # Non-interactive uninstall
+  abc_setup --uninstall --no-prompt
 """
 
 import argparse
@@ -32,20 +49,30 @@ logging.basicConfig(
     level=logging.INFO
 )
 
-def is_interactive():
-    """Check if we're running interactively."""
-    return sys.stdin.isatty()
+def get_terminal_input(prompt='', default=None):
+    """Get user input from terminal, handling both interactive and non-interactive cases."""
+    if not sys.stderr.isatty():
+        return default
+
+    print(prompt, end='', file=sys.stderr, flush=True)
+    try:
+        with open('/dev/tty', 'r') as tty:
+            response = tty.readline().strip()
+    except (OSError, IOError):
+        print(file=sys.stderr)
+        return default
+
+    print(file=sys.stderr)
+    return response if response else default
 
 def prompt_user(message, default=True, no_prompt=False):
     """Prompt user for yes/no confirmation."""
-    if no_prompt or not is_interactive():
+    if no_prompt:
         return default
 
-    prompt = " [Y/n] " if default else " [y/N] "
-    response = input(f"{message}{prompt}").lower().strip()
-    if not response:
-        return default
-    return response in ['y', 'yes']
+    prompt = f"{message} [{'Y/n' if default else 'y/N'}] "
+    response = get_terminal_input(prompt, 'y' if default else 'n')
+    return response.lower() in ['y', 'yes']
 
 def backup_file(file_path, timestamp):
     """Create a backup of a file with timestamp."""
@@ -122,18 +149,12 @@ def setup_config(no_prompt=False):
                 template_content = f.read()
 
         # Prompt for API key if interactive
-        if is_interactive():
-            print("\nPlease enter your Anthropic API key")
-            print("(You can get this from https://console.anthropic.com/settings/keys)")
-            api_key = input("API key: ").strip()
-
-            # Update template with provided key
-            config_content = template_content.replace('{ANTHROPIC_API_KEY}', api_key)
-        else:
-            # In non-interactive mode, just copy template
-            config_content = template_content
+        print("\nPlease enter your Anthropic API key", file=sys.stderr)
+        print("(You can get this from https://console.anthropic.com/settings/keys)", file=sys.stderr)
+        api_key = get_terminal_input("API key: ", '{ANTHROPIC_API_KEY}')
 
         # Write configuration
+        config_content = template_content.replace('{ANTHROPIC_API_KEY}', api_key)
         with open(config_file, 'w') as f:
             f.write(config_content)
 

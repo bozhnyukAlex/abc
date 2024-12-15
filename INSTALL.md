@@ -55,11 +55,11 @@ This guide provides instructions for installing abc on your system using pipx.
 
    This will:
    - Install shell integration scripts
-   - Update your shell configuration
+   - Update your shell rc files
    - Guide you through API key setup
    - Create backups of any modified files
 
-3. Start a new terminal or reload your shell configuration:
+3. Start a new terminal or reload your shell rc file:
 
    ```bash
    # For bash
@@ -110,12 +110,12 @@ pipx uninstall abc-cli
 
 ## Troubleshooting
 
-1. If you see "command not found: pipx" after installation:
+1. If you see "command not found: pipx" during installation:
    - Run: `pipx ensurepath`
    - Start a new terminal
 
 2. If abc commands don't work after installation:
-   - Ensure your shell configuration was sourced
+   - Ensure your shell rc file was sourced
    - Check that `~/.abc.conf` exists and contains your API key
    - Verify the shell integration with `type abc`
 

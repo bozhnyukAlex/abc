@@ -40,7 +40,9 @@ error() {
 }
 
 is_interactive() {
-    [[ -t 0 ]]
+    # Check if stderr is connected to a terminal
+    # This works even when stdin is a pipe
+    [[ -t 2 ]]
 }
 
 prompt_user() {
@@ -57,6 +59,7 @@ prompt_user() {
         return
     fi
 
+    # Prompt user on stderr to avoid pipe interference
     local prompt
     if [ "$default" = "y" ]; then
         prompt=" [Y/n] "
@@ -64,7 +67,12 @@ prompt_user() {
         prompt=" [y/N] "
     fi
 
-    read -r -p "$message$prompt" response
+    echo -n "$message$prompt" >&2
+    read -r response </dev/tty  # Read directly from terminal
+
+    # Add newline since we used echo -n above
+    echo >&2
+
     response=${response,,}  # Convert to lowercase
 
     if [[ -z "$response" ]]; then
@@ -120,7 +128,6 @@ install_pipx() {
             log "Installation cancelled by user"
             exit 0
         fi
-
 
     elif command -v yum &> /dev/null; then
         log "Detected older RedHat/CentOS - Installing pipx via yum..."
