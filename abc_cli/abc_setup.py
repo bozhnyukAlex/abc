@@ -252,38 +252,28 @@ def setup_shell_scripts(no_prompt=False):
 
 def uninstall(no_prompt=False):
     """Remove shell integration scripts and package files."""
-    if not prompt_user("\nAbout to remove abc shell integration files. Continue?", no_prompt=no_prompt):
-        print("Uninstall cancelled")
-        return 0
-
     try:
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         modified = False
         found_shells = []
 
-        # Remove source blocks from rc files
-        for shell, rc_file in SHELL_RC_FILES.items():
-            rc_path = Path.home() / rc_file
-            if not rc_path.exists():
-                continue
-            found_shells.append(shell)
-            if modify_rc_file(rc_file, '', remove=True):
-                modified = True
-                backup_file(rc_path, timestamp)
+        if prompt_user("\nWould you like to remove abc shell integration files from ~/.local/share/abc?", default=True, no_prompt=no_prompt):
+            # Remove ~/.local/share/abc directory
+            share_dir = Path.home() / '.local' / 'share' / 'abc'
+            if share_dir.exists():
+                shutil.rmtree(share_dir)
+                logging.info(f"Removed directory: {share_dir}")
 
-        if found_shells:
-            print("\nTo complete uninstallation, either:")
-            print("1. Start a new terminal, or")
-            print("2. Run one of these commands in your current terminal:")
-            for shell in found_shells:
-                rc_file = SHELL_RC_FILES[shell]
-                print(f"   For {shell}:  source ~/.{rc_file}")
-
-        # Remove ~/.local/share/abc directory
-        share_dir = Path.home() / '.local' / 'share' / 'abc'
-        if share_dir.exists():
-            shutil.rmtree(share_dir)
-            logging.info(f"Removed directory: {share_dir}")
+        if prompt_user("\nWould you like to remove abc commands from your shell rc files?", default=True, no_prompt=no_prompt):
+            # Remove source blocks from rc files
+            for shell, rc_file in SHELL_RC_FILES.items():
+                rc_path = Path.home() / rc_file
+                if not rc_path.exists():
+                    continue
+                found_shells.append(shell)
+                if modify_rc_file(rc_file, '', remove=True):
+                    modified = True
+                    backup_file(rc_path, timestamp)
 
         # Optionally remove configuration
         config_file = Path.home() / '.abc.conf'
