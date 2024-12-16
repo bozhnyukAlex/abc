@@ -9,7 +9,46 @@ This guide provides instructions for installing abc on your system using pipx.
 - bash 4.4+, zsh 5.0+, or tcsh 6.0+
 - An API key for the Claude AI model from Anthropic
 
-## Installation
+## Easy Installation
+
+1. Install the latest version of abc from GitHub using pipx:
+
+   ```bash
+   curl -fsSL https://getabc.sh/ | bash
+   ```
+
+   This will:
+   - Prompt you before every action
+   - Create backups of any modified files
+   - Describe every change it makes
+   - Install pipx using the method preferred by your OS
+   - Install the abc app using pipx
+   - Install abc shell integration scripts
+   - Add an abc command block to your shell rc file(s)
+   - Guide you through LLM API key setup
+   - Create the abc configuration file
+
+2. Start a new terminal or reload your shell rc file to enable the abc command:
+
+   ```bash
+   # For bash:
+   source ~/.bashrc
+
+   # For zsh:
+   source ~/.zshrc
+
+   # For tcsh:
+   source ~/.tcshrc
+   ```
+
+3. Verify the installation:
+
+   ```bash
+   abc hi
+   abc --version
+   ```
+
+## Manual Installation
 
 1. Install pipx, if you haven't already:
 
@@ -53,33 +92,25 @@ This guide provides instructions for installing abc on your system using pipx.
    abc_setup
    ```
 
-   This will:
-   - Install shell integration scripts
-   - Update your shell rc files
-   - Guide you through API key setup
-   - Create backups of any modified files
-
-3. Start a new terminal or reload your shell rc file:
+3. Start a new terminal or reload your shell rc file to enable the abc command:
 
    ```bash
-   # For bash
+   # For bash:
    source ~/.bashrc
 
-   # For zsh
+   # For zsh:
    source ~/.zshrc
 
-   # For tcsh
+   # For tcsh:
    source ~/.tcshrc
    ```
 
-## Verifying the Installation
+4. Verify the installation:
 
-To verify that abc is installed correctly:
-
-```bash
-abc --version
-abc hi
-```
+   ```bash
+   abc hi
+   abc --version
+   ```
 
 ## Updating
 
@@ -102,11 +133,11 @@ pipx uninstall abc-cli
 ## Files and Locations
 
 - Shell integration: `~/.local/share/abc/`
-- Configuration: `~/.abc.conf`
 - Shell configuration:
   - bash: `~/.bashrc`
   - zsh: `~/.zshrc`
   - tcsh: `~/.tcshrc`
+- abc Configuration: `~/.abc.conf`
 
 ## Troubleshooting
 
