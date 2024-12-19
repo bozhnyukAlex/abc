@@ -165,13 +165,23 @@ main() {
     log "Ensuring pipx apps are in PATH..."
     pipx ensurepath || error "Failed to ensure pipx apps are in PATH"
 
-    # Install abc
-    log "Installing abc from GitHub..."
-    if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
-        pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
+    # Check if abc is already installed
+    if pipx list | grep -q "abc-cli"; then
+        log "abc is already installed, attempting upgrade..."
+        if [[ "$(prompt_user "About to upgrade abc via pipx. Continue?" "y")" = "yes" ]]; then
+            pipx upgrade abc-cli || error "Failed to upgrade abc"
+        else
+            log "Upgrade cancelled by user"
+            exit 0
+        fi
     else
-        log "Installation cancelled by user"
-        exit 0
+        log "Installing abc from GitHub..."
+        if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
+            pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
+        else
+            log "Installation cancelled by user"
+            exit 0
+        fi
     fi
 
     # Run abc setup
