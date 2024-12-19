@@ -170,7 +170,9 @@ def setup_config(no_prompt=False):
         with open(config_file, 'w') as f:
             f.write(config_content)
 
-        logging.info(f"Created configuration file: {config_file}")
+        # Set restrictive permissions on config file since it contains sensitive data
+        config_file.chmod(0o600)
+        logging.info(f"Created configuration file with restricted permissions (600): {config_file}")
         return True
 
     except (OSError, IOError) as e:
