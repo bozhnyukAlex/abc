@@ -8,7 +8,7 @@ abc [OPTION]... DESCRIPTION...
 
 ## Description
 
-abc (AI Bash Command) lets you type an English description of a task and get an LLM generated command on your next shell prompt, ready to edit and execute. For example:
+`abc` (AI Bash Command) lets you type an English description of a task and get an LLM generated command on your next shell prompt, ready to edit and execute. For example:
 
 ```
 $ abc list files one per line, sorting lines from short to long
@@ -16,7 +16,7 @@ $ abc list files one per line, sorting lines from short to long
 $ ls -1 | awk '{ print length, $0 }' | sort -n | cut -d" " -f2-
 ```
 
-abc can help you quickly generate commands without memorizing syntax, and can assist in learning new command-line operations.
+`abc` can help you quickly generate commands without memorizing syntax, and can assist in learning new command-line operations.
 
 ## Features
 
@@ -83,7 +83,7 @@ The program will attempt to read the config file from the first of these values 
 
 ## Examples
 
-Tell abc what you want to do:
+Tell `abc` what you want to do:
 
 ```
 $ abc list files one per line, sorting lines from short to long
@@ -206,13 +206,13 @@ $ PATH=$(echo $PATH | tr ':' '\n' | awk '!seen[$0]++' | tr '\n' ':' | sed 's/:$/
 
 ## Danger Level Evaluation
 
-abc includes a feature to evaluate the potential danger level of generated commands:
+`abc` includes a feature to evaluate the potential danger level of generated commands:
 
 - Level 0: Read-only, informational commands.
 - Level 1: Commands that modify the system in common ways or generate standard side effects.
 - Level 2: Commands with potential for significant data loss or large side effects.
 
-For commands with a danger level of 2 or higher, abc will:
+For commands with a danger level of 2 or higher, `abc` will:
 1. Display a warning message on stderr.
 2. Prefix the command with `#DANGEROUS#`, requiring you to edit the command before execution.
 
@@ -253,9 +253,11 @@ Always review these warnings and dangerous commands carefully before execution.
 - Support custom prompt context
 - Use request history and generated commands as context for conversation
 
-## Contributing
+## GitHub project
 
-We want to keep abc tightly focused, but will review feedback in GitHub.
+<https://github.com/alestic/abc>
+
+We want to keep `abc` tightly focused, but will review feedback in GitHub.
 
 ### Issue Reports
 
@@ -264,7 +266,7 @@ We want to keep abc tightly focused, but will review feedback in GitHub.
 - For bugs, include:
   - Steps to reproduce
   - Expected vs actual behavior
-  - Your environment (OS, shell, abc version)
+  - Your environment (OS, shell, `abc` version)
   - Any relevant configuration settings; do not include API keys!
 - For feature requests, explain the use case and benefits
 
