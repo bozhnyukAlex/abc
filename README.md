@@ -113,6 +113,8 @@ abc --use 4o "list files by size"
 abc --use o1 "list files by size"
 ```
 
+Note: The OpenAI LLM provider plugin for `abc` has not yet been published.
+
 ## Examples
 
 Tell `abc` what you want to do:
