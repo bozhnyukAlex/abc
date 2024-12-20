@@ -172,6 +172,8 @@ main() {
             pipx upgrade abc-cli || error "Failed to upgrade abc"
             log "Upgrading Anthropic provider..."
             pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to upgrade Anthropic provider"
+            log "Upgrading AWS Bedrock provider..."
+            pipx inject abc-cli abc-provider-aws-bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock $FORCE_OPTION || error "Failed to upgrade AWS Bedrock provider"
         else
             log "Upgrade cancelled by user"
             exit 0
@@ -182,6 +184,8 @@ main() {
             pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
             log "Installing Anthropic provider..."
             pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to install Anthropic provider"
+            log "Installing AWS Bedrock provider..."
+            pipx inject abc-cli abc-provider-aws-bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock $FORCE_OPTION || error "Failed to install AWS Bedrock provider"
         else
             log "Installation cancelled by user"
             exit 0
