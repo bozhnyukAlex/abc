@@ -9,15 +9,31 @@ from abc_provider_anthropic.llm_provider import AnthropicProvider, DEFAULT_MODEL
 # Test configuration
 MOCK_API_KEY = "test_api_key"
 MOCK_CONFIG = {
+    "provider": "anthropic",
     "api_key": MOCK_API_KEY,
 }
 
 MOCK_CONFIG_FULL = {
+    "provider": "anthropic",
     "api_key": MOCK_API_KEY,
     "model": "claude-test",
     "temperature": "0.5",
     "max_tokens": "500",
 }
+
+def test_init_wrong_provider():
+    """Test provider initialization fails with wrong provider."""
+    config = MOCK_CONFIG.copy()
+    config["provider"] = "openai"
+    with pytest.raises(ValueError, match="Provider must be 'anthropic'"):
+        AnthropicProvider(config)
+
+def test_init_missing_provider():
+    """Test provider initialization fails without provider field."""
+    config = MOCK_CONFIG.copy()
+    del config["provider"]
+    with pytest.raises(ValueError, match="Provider must be 'anthropic'"):
+        AnthropicProvider(config)
 
 def test_init_minimal_config():
     """Test provider initialization with minimal config."""
@@ -46,8 +62,10 @@ def test_get_config_schema():
     schema = provider.get_config_schema()
 
     assert isinstance(schema, dict)
+    assert "provider" in schema["properties"]
     assert "api_key" in schema["properties"]
-    assert schema["required"] == ["api_key"]
+    assert schema["required"] == ["provider", "api_key"]
+    assert schema["properties"]["provider"]["enum"] == ["anthropic"]
 
 @patch('anthropic.Anthropic')
 def test_generate_command(mock_anthropic):

@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'claude-3-5-sonnet-20241022'
+DEFAULT_MODEL = 'claude-3-5-sonnet-latest'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
 
@@ -18,6 +18,9 @@ class AnthropicProvider(LLMProvider):
         Args:
             config: Provider configuration from abc.conf
         """
+        if config.get('provider') != 'anthropic':
+            raise ValueError("Provider must be 'anthropic'")
+
         self.api_key = config['api_key']
         self.model = config.get('model', DEFAULT_MODEL)
         self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
@@ -55,6 +58,11 @@ class AnthropicProvider(LLMProvider):
         return {
             "type": "object",
             "properties": {
+                "provider": {
+                    "type": "string",
+                    "description": "Provider identifier (must be 'anthropic')",
+                    "enum": ["anthropic"]
+                },
                 "api_key": {
                     "type": "string",
                     "description": "Anthropic API key"
@@ -75,5 +83,5 @@ class AnthropicProvider(LLMProvider):
                     "default": DEFAULT_MAX_TOKENS
                 }
             },
-            "required": ["api_key"]
+            "required": ["provider", "api_key"]
         }
