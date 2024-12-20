@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 """
-
 abc_generate - AI Bash Command Generator
 
 Website, source code, and documentation:
@@ -12,7 +11,6 @@ Credits:
 
   Written by Claude 3.5 Sonnet
   Prompt crafting by Eric Hammond
-
 """
 
 import argparse
@@ -20,34 +18,36 @@ import configparser
 import logging
 import os
 import sys
-from typing import List, Dict, Tuple
+from typing import Dict
 import re
-
-import anthropic
 import distro
+from importlib import metadata
 
-VERSION: str = "# 2024.12.15"
+from . import LLMProvider
+from .prompts import get_system_prompt
+
+# Entry point group for LLM providers
+PROVIDER_ENTRY_POINT = 'abc.llm_providers'
+
+VERSION: str = "# 2024.12.19"
 PROGRAM_NAME: str = "abc"
 
 # Config file
 DEFAULT_CONFIG_FILE: str = '~/.abc.conf'
 DEFAULT_CONFIG_SECTION: str = 'default'
+DEFAULT_PROVIDER: str = 'anthropic'
 
 # Log format
 LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
 LOG_FORMAT_DATE: str = '%Y-%m-%d %H:%M:%S'
-
-# LLM Constants
-LLM_MODEL: str = "claude-3-5-sonnet-20241022"
-LLM_TEMPERATURE: float = 0.0
-LLM_MAX_TOKENS: int = 1000
 
 # Constants for danger level parsing
 DANGER_LEVEL_PATTERN = r'##DANGERLEVEL=(\d)## (.+)$'
 HIGH_DANGER_THRESHOLD = 2
 DANGEROUS_PREFIX = '#DANGEROUS# '
 
-def get_os_info():
+def get_os_info() -> str:
+    """Get formatted OS information."""
     system = distro.name(pretty=True)
     version = distro.version(pretty=True)
     return f"{system} {version}".strip() or "POSIX"
@@ -66,6 +66,8 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='Display the program version and exit')
     parser.add_argument('--shell', choices=['bash', 'zsh', 'tcsh'], default='bash',
                         help='Specify the shell to generate commands for (default: bash)')
+    parser.add_argument('--use', metavar='SECTION',
+                        help='Use specific configuration section (default: default)')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', action='store_const',
@@ -80,113 +82,39 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='English description of the desired shell command')
     return parser
 
-def read_config_file(config_file_path: str) -> dict:
-    """Read and parse the configuration file, using only the first section."""
+def get_config(config_file_path: str, section: str = DEFAULT_CONFIG_SECTION) -> Dict[str, str]:
+    """Read and parse the configuration file, using the specified section."""
     config = configparser.ConfigParser()
     with open(config_file_path, 'r') as config_file:
         config.read_file(config_file)
     if len(config.sections()) == 0:
         raise configparser.Error(f"Error: No sections found in config file '{config_file_path}'")
-    first_section = config.sections()[0]
-    return dict(config[first_section])
+    if section not in config:
+        raise configparser.Error(f"Error: Section '{section}' not found in config file '{config_file_path}'")
+    return dict(config[section])
 
-def get_config(config_file_path: str) -> Dict[str, str]:
-    """Read and parse the configuration file, using only the first section."""
-    config = configparser.ConfigParser()
-    with open(config_file_path, 'r') as config_file:
-        config.read_file(config_file)
-    if len(config.sections()) == 0:
-        raise configparser.Error(f"Error: No sections found in config file '{config_file_path}'")
-    first_section = config.sections()[0]
-    return dict(config[first_section])
+def get_provider(config: Dict[str, str]) -> LLMProvider:
+    """Get the configured LLM provider."""
+    if 'provider' not in config:
+        # Default to anthropic for backward compatibility
+        provider_name = DEFAULT_PROVIDER
+    else:
+        provider_name = config['provider']
 
-def get_system_prompt(os_info: str, shell: str):
-    return f"""<purpose>
-    You are an expert in {shell} shell commands for {os_info}.
-    Given a natural language description, generate the appropriate {shell} command(s) to accomplish the task.
-</purpose>
+    try:
+        # Find the provider entry point
+        eps = metadata.entry_points().select(group=PROVIDER_ENTRY_POINT)
+        provider_ep = next(ep for ep in eps if ep.name == provider_name)
 
-<instructions>
-    <instruction>Generate only the exact {shell} shell command without explanations or preamble.</instruction>
-    <instruction>Important: All commands must be on a single-line.</instruction>
-    <instruction>Use techniques like semicolons, &&, ||, and pipes to separate multiple commands on the single line.</instruction>
-    <instruction>Ensure the output command can be directly copied and pasted into a terminal.</instruction>
-    <instruction>Use {shell}-specific syntax.</instruction>
-    <instruction>Use commands specific to {os_info} when appropriate.</instruction>
-    <instruction>Aim for elegance and simplicity.</instruction>
-    <instruction>Consider and handle edge cases (e.g., dot files, whitespace, missing/existing files).</instruction>
-    <instruction>Consider and handle unusual environment conditions (e.g., user-defined aliases, environment variables)</instruction>
-    <instruction>After generating the command line, evaluate its danger/risk level and add it on the second line in this format: ##DANGERLEVEL=[[CODE]]## [[justification]]</instruction>
-</instructions>
+        # Load the provider class
+        provider_class = provider_ep.load()
+        return provider_class(config)
 
-<danger-levels>
-    <level code="0">Read only, informational command.</level>
-    <level code="1">Modifies the system in common ways or generates standard side effects.</level>
-    <level code="2">Potential loss of significant data or large/harmful side effects. Should be reviewed carefully.</level>
-</danger-levels>
-
-<examples>
-    <example>
-        <input>
-            Description: find the longest python filename
-        </input>
-        <output>
-<![CDATA[
-find . -name "*.py" -type f -printf "%f\n" | awk '{{print length, $0}}' | sort -rn | head -1 | cut -d' ' -f2-
-##DANGERLEVEL=0## Reading file info, no changes made.
-]]>
-        </output>
-    </example>
-    <example>
-        <input>
-            Description: copy subdir1 contents to subdir2
-        </input>
-        <output>
-<![CDATA[
-cp --archive --interactive subdir1/ subdir2/
-##DANGERLEVEL=1## Can overwrite existing files in subdir2 with files from subdir1, potentially causing data loss in the destination directory
-]]>
-        </output>
-    </example>
-    <example>
-        <input>
-            Description: delete all system log files
-        </input>
-        <output>
-<![CDATA[
-sudo rm -rf /var/log/*
-##DANGERLEVEL=2## Highly destructive command that removes critical system logs. Will impact system monitoring, troubleshooting, and security auditing. Could prevent diagnosis of system issues and hide security breaches.
-]]>
-        </output>
-    </example>
-</examples>
-"""
-
-def generate_command(description: str, api_key: str, os_info: str, shell: str) -> str:
-    """Generate a command using the LLM based on the given description and shell."""
-    client = anthropic.Anthropic(api_key=api_key)
-
-    message = client.messages.create(
-        model=LLM_MODEL,
-        max_tokens=LLM_MAX_TOKENS,
-        temperature=LLM_TEMPERATURE,
-        system=get_system_prompt(os_info, shell),
-        messages=[
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text": f"Description: {description}\n\n{shell.capitalize()} command(s):"
-                    }
-                ]
-            }
-        ]
-    )
-
-    logging.debug(f"Response message: {message}")
-
-    return message.content[0].text.strip()
+    except (StopIteration, metadata.PackageNotFoundError):
+        raise ValueError(
+            f"Provider '{provider_name}' not found. "
+            f"Please install abc-provider-{provider_name} package."
+        )
 
 def process_generated_command(command: str) -> str:
     """Process the generated command based on its danger level."""
@@ -217,10 +145,13 @@ def main() -> int:
         setup_logging(args.log_level)
 
         config_file_path = args.config.name if args.config else os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
-        config = get_config(config_file_path)
+        section = args.use if args.use else DEFAULT_CONFIG_SECTION
+        config = get_config(config_file_path, section)
 
         if 'api_key' not in config:
-            raise ValueError("API key not found in configuration")
+            raise ValueError(f"API key not found in configuration section '{section}'")
+
+        logging.info(f"Using configuration section: {section}")
 
         description = " ".join(args.description)
         if not description:
@@ -228,7 +159,20 @@ def main() -> int:
 
         logging.info(f"Generating {args.shell} command for: {description}")
 
-        raw_command = generate_command(description, config['api_key'], get_os_info(), args.shell)
+        # Get provider and context
+        provider = get_provider(config)
+        context = {
+            'shell': args.shell,
+            'os_info': get_os_info()
+        }
+
+        # Generate command
+        raw_command = provider.generate_command(
+            description=description,
+            context=context,
+            system_prompt=get_system_prompt(context)
+        )
+
         processed_command = process_generated_command(raw_command)
         print(processed_command)
 

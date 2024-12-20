@@ -170,6 +170,8 @@ main() {
         log "abc is already installed, attempting upgrade..."
         if [[ "$(prompt_user "About to upgrade abc via pipx. Continue?" "y")" = "yes" ]]; then
             pipx upgrade abc-cli || error "Failed to upgrade abc"
+            log "Upgrading Anthropic provider..."
+            pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to upgrade Anthropic provider"
         else
             log "Upgrade cancelled by user"
             exit 0
@@ -178,6 +180,8 @@ main() {
         log "Installing abc from GitHub..."
         if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
             pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
+            log "Installing Anthropic provider..."
+            pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to install Anthropic provider"
         else
             log "Installation cancelled by user"
             exit 0

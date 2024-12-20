@@ -7,7 +7,18 @@ This guide provides instructions for installing abc on your system using pipx.
 - Linux or macOS
 - Python 3.8 or higher
 - bash 4.4+, zsh 5.0+, or tcsh 6.0+
-- An API key for the Claude AI model from Anthropic
+- An API key for your chosen LLM provider (default: Anthropic)
+
+## LLM Providers
+
+abc uses a plugin system for LLM providers. The default installation includes:
+
+- Anthropic LLM provider (Claude)
+
+Additional providers can be installed using:
+```bash
+pipx inject abc-cli abc-provider-NAME
+```
 
 ## Easy Installation
 
@@ -80,15 +91,17 @@ This guide provides instructions for installing abc on your system using pipx.
 
    ```bash
    pipx install git+https://github.com/alestic/abc.git
+   pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic
    abc_setup
    ```
 
-   Alternative:
+   Alternative (for development):
 
    ```bash
    git clone https://github.com/alestic/abc.git
    cd abc
-   pipx install .
+   pipx install -e .
+   pipx inject abc-cli -e ./abc_provider_anthropic
    abc_setup
    ```
 
@@ -138,6 +151,39 @@ pipx uninstall abc-cli
   - zsh: `~/.zshrc`
   - tcsh: `~/.tcshrc`
 - abc Configuration: `~/.abc.conf`
+
+## Configuration
+
+The configuration file (`~/.abc.conf`) supports multiple named sections for different LLM providers:
+
+```ini
+[default]
+provider = anthropic
+api_key = {ANTHROPIC_API_KEY}
+model = claude-3-5-sonnet-latest
+
+[o1]  # OpenAI o1 config
+provider = openai
+api_key = {OPENAI_API_KEY}
+model = o1
+```
+
+Each section requires:
+- `provider`: The LLM provider to use (e.g., 'anthropic', 'openai')
+- `api_key`: The API key for the provider
+
+Optional settings:
+- `model`: The specific model to use (defaults to provider's default)
+- Additional provider-specific settings (see provider documentation)
+
+Use different configurations with the --use option:
+```bash
+# Use default config
+abc "list files by size"
+
+# Use OpenAI o1 config
+abc --use o1 "list files by size"
+```
 
 ## Troubleshooting
 

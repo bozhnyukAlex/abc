@@ -64,6 +64,7 @@ Remember to always review the generated commands before executing them, especial
 ## Options
 
 - `-c, --config CONFIGFILE`: Path to the primary configuration file. (Defaults to $ABC_CONFIG or "$HOME/.abc.conf")
+- `--use SECTION`: Use specific configuration section (e.g., --use o1 if you configured an OpenAI o1 config)
 - `--verbose`: Provides detailed information about the program's execution.
 - `--debug`: Provides debug information. Only use this when troubleshooting issues.
 - `--version`: Displays the program version and exits.
@@ -80,6 +81,37 @@ The program will attempt to read the config file from the first of these values 
 1. `--config` command line option
 2. $ABC_CONFIG environment variable
 3. $HOME/.abc.conf
+
+Configuration sections allow using different LLM providers and models:
+
+```ini
+[default]
+provider = anthropic
+api_key = {ANTHROPIC_API_KEY}
+model = claude-3-5-sonnet-latest
+
+[4o]  # GPT-4o config
+provider = openai
+api_key = {OPENAI_API_KEY}
+model = gpt-4o
+
+[o1]  # OpenAI o1 config
+provider = openai
+api_key = {OPENAI_API_KEY}
+model = o1
+```
+
+Use different configurations with the --use option:
+```bash
+# Use default (Anthropic Claude)
+abc "list files by size"
+
+# Use GPT-4o config
+abc --use 4o "list files by size"
+
+# Use OpenAI o1 config
+abc --use o1 "list files by size"
+```
 
 ## Examples
 
@@ -245,14 +277,6 @@ Always review these warnings and dangerous commands carefully before execution.
 
 - The command `abc --help` does not currently work when using the interactive bash function.
 
-## TODO
-
-- Support MacOS
-- Support multiple LLM models
-- Support multiple LLM providers
-- Support custom prompt context
-- Use request history and generated commands as context for conversation
-
 ## GitHub project
 
 <https://github.com/alestic/abc>
@@ -289,4 +313,4 @@ Prompt crafting by Eric Hammond
 
 ## Version
 
-Current version: 2024.12.15
+Current version: 2024.12.19

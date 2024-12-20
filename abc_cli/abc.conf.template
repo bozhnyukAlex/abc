@@ -1,5 +1,25 @@
 # abc (AI bash/zsh/tcsh Command) configuration file
 
 [default]
+# Default provider configuration
+provider = anthropic
 # Anthropic API key from https://console.anthropic.com/settings/keys
 api_key = {ANTHROPIC_API_KEY}
+# Optional: specify model (default: claude-3-5-sonnet-latest)
+model = claude-3-5-sonnet-latest
+
+# Example configurations for other providers:
+
+# [4o]  # GPT-4o config
+# provider = openai
+# api_key = {OPENAI_API_KEY}
+# model = gpt-4o
+
+# [o1]  # OpenAI o1 config
+# provider = openai
+# api_key = {OPENAI_API_KEY}
+# model = o1
+
+# Usage:
+# - Default: abc "your command description"
+# - Specific config: abc --use 4o "your command description"
