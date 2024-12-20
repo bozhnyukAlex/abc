@@ -152,6 +152,39 @@ pipx uninstall abc-cli
   - tcsh: `~/.tcshrc`
 - abc Configuration: `~/.abc.conf`
 
+## Configuration
+
+The configuration file (`~/.abc.conf`) supports multiple named sections for different LLM providers:
+
+```ini
+[default]
+provider = anthropic
+api_key = {ANTHROPIC_API_KEY}
+model = claude-3-5-sonnet-latest
+
+[o1]  # OpenAI o1 config
+provider = openai
+api_key = {OPENAI_API_KEY}
+model = o1
+```
+
+Each section requires:
+- `provider`: The LLM provider to use (e.g., 'anthropic', 'openai')
+- `api_key`: The API key for the provider
+
+Optional settings:
+- `model`: The specific model to use (defaults to provider's default)
+- Additional provider-specific settings (see provider documentation)
+
+Use different configurations with the --use option:
+```bash
+# Use default config
+abc "list files by size"
+
+# Use OpenAI o1 config
+abc --use o1 "list files by size"
+```
+
 ## Troubleshooting
 
 1. If you see "command not found: pipx" during installation:
