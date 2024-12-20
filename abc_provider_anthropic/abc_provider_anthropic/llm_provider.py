@@ -3,7 +3,7 @@
 import anthropic
 from typing import Dict, Any
 
-from . import LLMProvider
+from abc_cli import LLMProvider
 
 DEFAULT_MODEL = 'claude-3-5-sonnet-20241022'
 DEFAULT_TEMPERATURE = 0.0
@@ -62,17 +62,17 @@ class AnthropicProvider(LLMProvider):
                 "model": {
                     "type": "string",
                     "description": "Claude model to use",
-                    "default": "claude-3-5-sonnet-20241022"
+                    "default": DEFAULT_MODEL
                 },
                 "temperature": {
                     "type": "string",
                     "description": "Sampling temperature",
-                    "default": "0.0"
+                    "default": DEFAULT_TEMPERATURE
                 },
                 "max_tokens": {
                     "type": "string",
                     "description": "Maximum tokens in response",
-                    "default": "1000"
+                    "default": DEFAULT_MAX_TOKENS
                 }
             },
             "required": ["api_key"]

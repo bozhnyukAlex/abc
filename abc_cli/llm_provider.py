@@ -1,4 +1,4 @@
-"""Provider interface for abc LLM integrations."""
+"""Core interface definition for abc LLM providers."""
 
 # NOTE! The `abc`/`ABC` module is part of the Python standard library and should not be confused with the `abc` command and `abc-cli` package.
 

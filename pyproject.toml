@@ -14,7 +14,6 @@ authors = [
     { name = "Eric Hammond", email = "" }
 ]
 dependencies = [
-    "anthropic==0.40.0",
     "readchar==4.1.0",
     "distro==1.8.0",
     "prompt_toolkit==3.0.47"
@@ -35,3 +34,6 @@ packages = ["abc_cli"]
 "abc_cli/abc.sh" = "abc_cli/abc.sh"
 "abc_cli/abc.tcsh" = "abc_cli/abc.tcsh"
 "abc_cli/abc.conf.template" = "abc_cli/abc.conf.template"
+
+[tool.hatch.metadata]
+allow-direct-references = true

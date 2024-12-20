@@ -7,7 +7,18 @@ This guide provides instructions for installing abc on your system using pipx.
 - Linux or macOS
 - Python 3.8 or higher
 - bash 4.4+, zsh 5.0+, or tcsh 6.0+
-- An API key for the Claude AI model from Anthropic
+- An API key for your chosen LLM provider (default: Anthropic)
+
+## LLM Providers
+
+abc uses a plugin system for LLM providers. The default installation includes:
+
+- Anthropic LLM provider (Claude)
+
+Additional providers can be installed using:
+```bash
+pipx inject abc-cli abc-provider-NAME
+```
 
 ## Easy Installation
 
@@ -80,15 +91,17 @@ This guide provides instructions for installing abc on your system using pipx.
 
    ```bash
    pipx install git+https://github.com/alestic/abc.git
+   pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic
    abc_setup
    ```
 
-   Alternative:
+   Alternative (for development):
 
    ```bash
    git clone https://github.com/alestic/abc.git
    cd abc
-   pipx install .
+   pipx install -e .
+   pipx inject abc-cli -e ./abc_provider_anthropic
    abc_setup
    ```
 

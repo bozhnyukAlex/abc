@@ -21,10 +21,13 @@ import sys
 from typing import Dict
 import re
 import distro
+from importlib import metadata
 
-from .providers import LLMProvider
-from .providers.anthropic import AnthropicProvider
-from .providers.prompts import get_system_prompt
+from . import LLMProvider
+from .prompts import get_system_prompt
+
+# Entry point group for LLM providers
+PROVIDER_ENTRY_POINT = 'abc.llm_providers'
 
 VERSION: str = "# 2024.12.15"
 PROGRAM_NAME: str = "abc"
@@ -92,7 +95,23 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
     Currently defaults to Anthropic provider for backward compatibility.
     Will be enhanced to support provider selection in the future.
     """
-    return AnthropicProvider(config)
+    # For now, hardcode to anthropic for backward compatibility
+    provider_name = 'anthropic'
+
+    try:
+        # Find the provider entry point
+        eps = metadata.entry_points().select(group=PROVIDER_ENTRY_POINT)
+        provider_ep = next(ep for ep in eps if ep.name == provider_name)
+
+        # Load the provider class
+        provider_class = provider_ep.load()
+        return provider_class(config)
+
+    except (StopIteration, metadata.PackageNotFoundError):
+        raise ValueError(
+            f"Provider '{provider_name}' not found. "
+            f"Please install abc-provider-{provider_name} package."
+        )
 
 def process_generated_command(command: str) -> str:
     """Process the generated command based on its danger level."""

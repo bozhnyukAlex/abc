@@ -1,0 +1,35 @@
+# abc/.clinerules
+
+- Always read these files to understand the project and the layout:
+
+  - `README.md`
+  - always run this at the beginning of a project to understand the Git repo layout: `make tree`
+  - read files referenced in the above as appropriate for the task at hand
+
+- When working on a GitHub issue, follow standard best practices with a branch name like:
+  `issue-NN-{fix,feature}-description-$(date _%Y%m%d)
+
+- Use the `git` and `gh` CLIs where it makes sense.
+
+- When an update is complete, the software version can be updated in these five files:
+
+  - `abc_provider_anthropic/pyproject.toml`
+  - `pyproject.toml`
+  - `abc_cli/abc_generate.py`
+  - `README.md`
+  - `../getabc.sh/app/components/OpenSource.tsx`
+
+- Uninstall
+
+  ```bash
+  abc_setup --uninstall --no-prompt &&
+  pipx uninstall abc-cli
+  ```
+
+- Install for development (editable mode)
+
+  ```bash
+  pipx install -e . &&
+  pipx inject abc-cli -e ./abc_provider_anthropic &&
+  abc_setup --no-prompt
+  ```
