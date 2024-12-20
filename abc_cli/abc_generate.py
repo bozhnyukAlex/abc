@@ -117,7 +117,13 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
         )
 
 def process_generated_command(command: str) -> str:
-    """Process the generated command based on its danger level."""
+    """Process the generated command based on its danger level.
+    Also handles special markup like CDATA tags from certain LLM providers."""
+    # First strip any CDATA wrapper if present
+    cdata_pattern = r'<!\[CDATA\[(.*?)\]\]>'
+    if re.search(cdata_pattern, command, re.DOTALL):
+        command = re.sub(cdata_pattern, r'\1', command, flags=re.DOTALL).strip()
+
     lines = command.splitlines()
     if not lines:
         return command  # Empty command, return as is
