@@ -102,6 +102,7 @@ pipx inject abc-cli abc-provider-NAME
    cd abc
    pipx install -e .
    pipx inject abc-cli -e ./abc_provider_anthropic
+   pipx inject abc-cli -e ./abc_provider_aws_bedrock
    abc_setup
    ```
 

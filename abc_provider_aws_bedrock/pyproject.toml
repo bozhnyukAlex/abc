@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "abc_provider_aws_bedrock"
+version = "2024.12.19"  # Match current abc-cli version
+description = "AWS Bedrock LLM provider plugin for abc-cli"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "Apache-2.0"
+dependencies = [
+    "boto3>=1.35.0",  # Latest stable boto3 version
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0"
+]
+
+[project.entry-points."abc.llm_providers"]
+aws-bedrock = "abc_provider_aws_bedrock.llm_provider:AWSBedrockProvider"

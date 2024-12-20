@@ -148,10 +148,16 @@ def main() -> int:
         section = args.use if args.use else DEFAULT_CONFIG_SECTION
         config = get_config(config_file_path, section)
 
-        if 'api_key' not in config:
-            raise ValueError(f"API key not found in configuration section '{section}'")
-
         logging.info(f"Using configuration section: {section}")
+
+        # Get provider and validate config against schema
+        provider = get_provider(config)
+        schema = provider.get_config_schema()
+        required_fields = schema.get('required', [])
+
+        for field in required_fields:
+            if field not in config:
+                raise ValueError(f"{field} not found in configuration section '{section}'")
 
         description = " ".join(args.description)
         if not description:
@@ -159,8 +165,7 @@ def main() -> int:
 
         logging.info(f"Generating {args.shell} command for: {description}")
 
-        # Get provider and context
-        provider = get_provider(config)
+        # Set up context
         context = {
             'shell': args.shell,
             'os_info': get_os_info()

@@ -1,25 +1,26 @@
-# abc (AI bash/zsh/tcsh Command) configuration file
+# abc (AI Bash Command) configuration file
+# See: https://getabc.sh/
 
 [default]
-# Default provider configuration
 provider = anthropic
 # Anthropic API key from https://console.anthropic.com/settings/keys
 api_key = {ANTHROPIC_API_KEY}
-# Optional: specify model (default: claude-3-5-sonnet-latest)
 model = claude-3-5-sonnet-latest
 
 # Example configurations for other providers:
 
-# [4o]  # GPT-4o config
-# provider = openai
-# api_key = {OPENAI_API_KEY}
-# model = gpt-4o
+# [bedrock-claude]  # AWS Bedrock Claude config
+# provider = aws-bedrock
+# profile = {AWS_PROFILE}  # ~/.aws/config profile name
+# region = us-east-1  # AWS region
+# model = us.anthropic.claude-3-5-sonnet-20241022-v2:0 # Bedrock inference profile
 
-# [o1]  # OpenAI o1 config
-# provider = openai
-# api_key = {OPENAI_API_KEY}
-# model = o1
+# [bedrock-nova-pro]  # AWS Bedrock Nova Pro config
+# provider = aws-bedrock
+# profile = {AWS_PROFILE}  # ~/.aws/config profile name
+# region = us-east-1  # AWS region
+# model = us.amazon.nova-pro-v1:0  # Bedrock inference profile
 
 # Usage:
 # - Default: abc "your command description"
-# - Specific config: abc --use 4o "your command description"
+# - Specific config: abc --use bedrock-claude "your command description"
