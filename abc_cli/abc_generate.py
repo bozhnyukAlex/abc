@@ -35,6 +35,7 @@ PROGRAM_NAME: str = "abc"
 # Config file
 DEFAULT_CONFIG_FILE: str = '~/.abc.conf'
 DEFAULT_CONFIG_SECTION: str = 'default'
+DEFAULT_PROVIDER: str = 'anthropic'
 
 # Log format
 LOG_FORMAT: str = f'%(asctime)s [{PROGRAM_NAME}] [%(levelname)s] %(message)s'
@@ -65,6 +66,8 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='Display the program version and exit')
     parser.add_argument('--shell', choices=['bash', 'zsh', 'tcsh'], default='bash',
                         help='Specify the shell to generate commands for (default: bash)')
+    parser.add_argument('--use', metavar='SECTION',
+                        help='Use specific configuration section (default: default)')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', action='store_const',
@@ -79,24 +82,24 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='English description of the desired shell command')
     return parser
 
-def get_config(config_file_path: str) -> Dict[str, str]:
-    """Read and parse the configuration file, using only the first section."""
+def get_config(config_file_path: str, section: str = DEFAULT_CONFIG_SECTION) -> Dict[str, str]:
+    """Read and parse the configuration file, using the specified section."""
     config = configparser.ConfigParser()
     with open(config_file_path, 'r') as config_file:
         config.read_file(config_file)
     if len(config.sections()) == 0:
         raise configparser.Error(f"Error: No sections found in config file '{config_file_path}'")
-    first_section = config.sections()[0]
-    return dict(config[first_section])
+    if section not in config:
+        raise configparser.Error(f"Error: Section '{section}' not found in config file '{config_file_path}'")
+    return dict(config[section])
 
 def get_provider(config: Dict[str, str]) -> LLMProvider:
-    """Get the configured LLM provider.
-
-    Currently defaults to Anthropic provider for backward compatibility.
-    Will be enhanced to support provider selection in the future.
-    """
-    # For now, hardcode to anthropic for backward compatibility
-    provider_name = 'anthropic'
+    """Get the configured LLM provider."""
+    if 'provider' not in config:
+        # Default to anthropic for backward compatibility
+        provider_name = DEFAULT_PROVIDER
+    else:
+        provider_name = config['provider']
 
     try:
         # Find the provider entry point
@@ -142,10 +145,13 @@ def main() -> int:
         setup_logging(args.log_level)
 
         config_file_path = args.config.name if args.config else os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
-        config = get_config(config_file_path)
+        section = args.use if args.use else DEFAULT_CONFIG_SECTION
+        config = get_config(config_file_path, section)
 
         if 'api_key' not in config:
-            raise ValueError("API key not found in configuration")
+            raise ValueError(f"API key not found in configuration section '{section}'")
+
+        logging.info(f"Using configuration section: {section}")
 
         description = " ".join(args.description)
         if not description:
