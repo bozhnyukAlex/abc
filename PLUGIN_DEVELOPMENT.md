@@ -36,7 +36,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-provider-NAME"
-version = "2024.12.15"  # Match abc-cli version
+version = "2024.12.15"  # Match abc-cli version format
 description = "NAME LLM provider for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"

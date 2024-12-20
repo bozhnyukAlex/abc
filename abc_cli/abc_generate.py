@@ -29,7 +29,7 @@ from .prompts import get_system_prompt
 # Entry point group for LLM providers
 PROVIDER_ENTRY_POINT = 'abc.llm_providers'
 
-VERSION: str = "# 2024.12.15"
+VERSION: str = "# 2024.12.19"
 PROGRAM_NAME: str = "abc"
 
 # Config file
