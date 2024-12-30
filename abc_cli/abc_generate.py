@@ -33,7 +33,6 @@ VERSION: str = "# 2024.12.30"
 PROGRAM_NAME: str = "abc"
 
 # Config file
-DEFAULT_CONFIG_FILE: str = '~/.abc.conf'
 DEFAULT_CONFIG_SECTION: str = 'default'
 DEFAULT_PROVIDER: str = 'anthropic'
 
@@ -60,7 +59,6 @@ def create_argument_parser() -> argparse.ArgumentParser:
     """Create an argument parser for command-line arguments."""
     parser = argparse.ArgumentParser(prog=PROGRAM_NAME, description="abc - AI Bash Command Generator")
     parser.add_argument('-c', '--config', type=argparse.FileType('r'),
-                        default=os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE)),
                         help='Path to configuration file')
     parser.add_argument('--version', action='version', version=VERSION,
                         help='Display the program version and exit')
@@ -81,6 +79,27 @@ def create_argument_parser() -> argparse.ArgumentParser:
     parser.add_argument('description', nargs=argparse.REMAINDER,
                         help='English description of the desired shell command')
     return parser
+
+def get_config_file() -> str:
+    """Get config file path with XDG support."""
+    # Check CLI override or environment variable first
+    if config_override := os.environ.get('ABC_CONFIG'):
+        return os.path.expanduser(config_override)
+
+    # XDG config path
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME', os.path.expanduser('~/.config'))
+    xdg_config = os.path.join(xdg_config_home, 'abc', 'config')
+
+    # Legacy config path
+    legacy_config = os.path.expanduser('~/.abc.conf')
+
+    # If both configs exist, warn about legacy config
+    if os.path.exists(xdg_config) and os.path.exists(legacy_config):
+        print("Warning: Found both XDG config and legacy config.", file=sys.stderr)
+        print(f"Please remove the legacy config: rm {legacy_config}", file=sys.stderr)
+
+    # Return first existing config or default to XDG path
+    return xdg_config if os.path.exists(xdg_config) else legacy_config
 
 def get_config(config_file_path: str, section: str = DEFAULT_CONFIG_SECTION) -> Dict[str, str]:
     """Read and parse the configuration file, using the specified section."""
@@ -156,7 +175,7 @@ def main() -> int:
 
         setup_logging(args.log_level)
 
-        config_file_path = args.config.name if args.config else os.environ.get('ABC_CONFIG', os.path.expanduser(DEFAULT_CONFIG_FILE))
+        config_file_path = args.config.name if args.config else get_config_file()
         section = args.use if args.use else DEFAULT_CONFIG_SECTION
         config = get_config(config_file_path, section)
 
