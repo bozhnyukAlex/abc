@@ -80,7 +80,8 @@ Remember to always review the generated commands before executing them, especial
 The program will attempt to read the config file from the first of these values provided:
 1. `--config` command line option
 2. $ABC_CONFIG environment variable
-3. $HOME/.abc.conf
+3. $XDG_CONFIG_HOME/abc/config (defaults to ~/.config/abc/config)
+4. ~/.abc.conf (legacy, will be removed in a future version)
 
 Configuration sections allow using different LLM providers and models:
 

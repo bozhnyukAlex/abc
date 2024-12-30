@@ -230,19 +230,57 @@ def try_modify_rc_file(file_path, source_line, remove=False):
     write_rc_file(file_path, new_lines)
     return True
 
+def get_config_paths():
+    """Get config file paths following XDG Base Directory Specification."""
+    # Legacy config path
+    legacy_config = Path.home() / '.abc.conf'
+
+    # XDG config path
+    xdg_config_home = os.environ.get('XDG_CONFIG_HOME', Path.home() / '.config')
+    xdg_config = Path(xdg_config_home) / 'abc' / 'config'
+
+    return xdg_config, legacy_config
+
 def setup_config(no_prompt=False):
     """Set up abc configuration file with API key."""
-    config_file = Path.home() / '.abc.conf'
+    xdg_config, legacy_config = get_config_paths()
 
-    # Check if we should configure
-    if config_file.exists() and not prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?", default=False, no_prompt=no_prompt):
+    # Check for existing configs
+    if legacy_config.exists():
+        if not prompt_user("\nFound config at ~/.abc.conf. Would you like to migrate it to the XDG location?", default=True, no_prompt=no_prompt):
+            return True
+
+        # Create XDG config directory
+        xdg_config.parent.mkdir(parents=True, exist_ok=True)
+
+        # Copy existing config to XDG location
+        shutil.copy2(legacy_config, xdg_config)
+        xdg_config.chmod(0o600)
+
+        # Add deprecation warning to old config
+        with open(legacy_config, 'r') as f:
+            old_content = f.read()
+        with open(legacy_config, 'w') as f:
+            f.write("# This configuration file is deprecated.\n")
+            f.write(f"# Please use {xdg_config} instead.\n")
+            f.write("# This file will be removed in a future version.\n\n")
+            f.write(old_content)
+
+        logging.info(f"Migrated config to: {xdg_config}")
+        return True
+
+    # Check if XDG config exists
+    if xdg_config.exists() and not prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?", default=False, no_prompt=no_prompt):
         return True
 
     try:
-        # Backup existing config if it exists
-        if config_file.exists():
+        # Create XDG config directory
+        xdg_config.parent.mkdir(parents=True, exist_ok=True)
+
+        # Backup existing XDG config if it exists
+        if xdg_config.exists():
             timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-            backup_file(config_file, timestamp)
+            backup_file(xdg_config, timestamp)
 
         # Get the template content
         with importlib.resources.path('abc_cli', 'abc.conf.template') as template_path:
@@ -256,12 +294,12 @@ def setup_config(no_prompt=False):
 
         # Write configuration
         config_content = template_content.replace('{ANTHROPIC_API_KEY}', api_key)
-        with open(config_file, 'w') as f:
+        with open(xdg_config, 'w') as f:
             f.write(config_content)
 
         # Set restrictive permissions on config file since it contains sensitive data
-        config_file.chmod(0o600)
-        logging.info(f"Created configuration file with restricted permissions (600): {config_file}")
+        xdg_config.chmod(0o600)
+        logging.info(f"Created configuration file with restricted permissions (600): {xdg_config}")
         return True
 
     except (OSError, IOError) as e:
@@ -369,13 +407,18 @@ def uninstall(no_prompt=False):
                 if try_modify_rc_file(rc_file, '', remove=True):
                     modified = True
 
-        # Optionally remove configuration
-        config_file = Path.home() / '.abc.conf'
-        if config_file.exists() and prompt_user("\nWould you like to remove the configuration file (~/.abc.conf)?", default=False, no_prompt=no_prompt):
-            # Create backup before removal since we know we'll modify it
-            backup_file(config_file, timestamp)
-            config_file.unlink()
-            logging.info("Removed configuration file")
+        # Optionally remove configuration files
+        xdg_config, legacy_config = get_config_paths()
+
+        if xdg_config.exists() and prompt_user("\nWould you like to remove the configuration file?", default=False, no_prompt=no_prompt):
+            backup_file(xdg_config, timestamp)
+            xdg_config.unlink()
+            logging.info(f"Removed configuration file: {xdg_config}")
+
+        if legacy_config.exists() and prompt_user("\nWould you like to remove the legacy configuration file (~/.abc.conf)?", default=False, no_prompt=no_prompt):
+            backup_file(legacy_config, timestamp)
+            legacy_config.unlink()
+            logging.info("Removed legacy configuration file")
 
         print("\nUninstallation complete. You may now run:")
         print("pipx uninstall abc-cli")
