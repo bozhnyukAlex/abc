@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc_provider_aws_bedrock"
-version = "2024.12.19"  # Match current abc-cli version
+version = "2024.12.30"  # Match current abc-cli version
 description = "AWS Bedrock LLM provider plugin for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"

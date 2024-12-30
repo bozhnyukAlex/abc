@@ -2,4 +2,4 @@
 
 from .llm_provider import AWSBedrockProvider, PROVIDER_NAME
 
-__version__ = "2024.12.19"
+__version__ = "2024.12.30"

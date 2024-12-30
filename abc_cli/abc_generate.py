@@ -29,7 +29,7 @@ from .prompts import get_system_prompt
 # Entry point group for LLM providers
 PROVIDER_ENTRY_POINT = 'abc.llm_providers'
 
-VERSION: str = "# 2024.12.19"
+VERSION: str = "# 2024.12.30"
 PROGRAM_NAME: str = "abc"
 
 # Config file
@@ -102,9 +102,15 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
         provider_name = config['provider']
 
     try:
-        # Find the provider entry point
-        eps = metadata.entry_points().select(group=PROVIDER_ENTRY_POINT)
-        provider_ep = next(ep for ep in eps if ep.name == provider_name)
+        # Handle both old (pre-3.10) and new entry_points API
+        try:
+            # New API (Python 3.10+)
+            eps = metadata.entry_points().select(group=PROVIDER_ENTRY_POINT)
+            provider_ep = next(ep for ep in eps if ep.name == provider_name)
+        except AttributeError:
+            # Old API (Python < 3.10)
+            eps = metadata.entry_points().get(PROVIDER_ENTRY_POINT, [])
+            provider_ep = next(ep for ep in eps if ep.name == provider_name)
 
         # Load the provider class
         provider_class = provider_ep.load()
