@@ -10,6 +10,12 @@ NO_PROMPT_OPTION=
 FORCE=false
 FORCE_OPTION=
 
+# List of providers to install/upgrade
+PROVIDERS=(
+    "anthropic"
+    "aws_bedrock"
+)
+
 # Parse command line arguments
 while [[ $# -gt 0 ]]; do
     case $1 in
@@ -169,11 +175,25 @@ main() {
     if pipx list | grep -q "abc-cli"; then
         log "abc is already installed, attempting upgrade..."
         if [[ "$(prompt_user "About to upgrade abc via pipx. Continue?" "y")" = "yes" ]]; then
-            pipx upgrade abc-cli || error "Failed to upgrade abc"
-            log "Upgrading Anthropic provider..."
-            pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to upgrade Anthropic provider"
-            log "Upgrading AWS Bedrock provider..."
-            pipx inject abc-cli abc-provider-aws-bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock $FORCE_OPTION || error "Failed to upgrade AWS Bedrock provider"
+            # Capture and display pipx output, then check for successful upgrade
+            output=$(pipx upgrade abc-cli 2>&1)
+            echo "$output"
+            if [ $? -eq 0 ]; then
+                log "Upgrade successful"
+            elif echo "$output" | grep -q "upgraded package abc-cli"; then
+                log "Upgrade successful despite pipx warning"
+            else
+                error "Failed to upgrade abc"
+            fi
+            # Upgrade all providers
+            for provider in "${PROVIDERS[@]}"; do
+                log "Upgrading ${provider} provider..."
+                output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
+                echo "$output"
+                if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
+                    error "Failed to upgrade ${provider} provider"
+                fi
+            done
         else
             log "Upgrade cancelled by user"
             exit 0
@@ -181,11 +201,25 @@ main() {
     else
         log "Installing abc from GitHub..."
         if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
-            pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION || error "Failed to install abc via pipx"
-            log "Installing Anthropic provider..."
-            pipx inject abc-cli abc-provider-anthropic@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_anthropic $FORCE_OPTION || error "Failed to install Anthropic provider"
-            log "Installing AWS Bedrock provider..."
-            pipx inject abc-cli abc-provider-aws-bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock $FORCE_OPTION || error "Failed to install AWS Bedrock provider"
+            # Capture and display pipx output, then check for successful install
+            output=$(pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION 2>&1)
+            echo "$output"
+            if [ $? -eq 0 ]; then
+                log "Installation successful"
+            elif echo "$output" | grep -q "installed package abc-cli"; then
+                log "Installation successful despite pipx warning"
+            else
+                error "Failed to install abc via pipx"
+            fi
+            # Install all providers
+            for provider in "${PROVIDERS[@]}"; do
+                log "Installing ${provider} provider..."
+                output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
+                echo "$output"
+                if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
+                    error "Failed to install ${provider} provider"
+                fi
+            done
         else
             log "Installation cancelled by user"
             exit 0
