@@ -261,9 +261,9 @@ def setup_config(no_prompt=False):
         with open(legacy_config, 'r') as f:
             old_content = f.read()
         with open(legacy_config, 'w') as f:
-            f.write("# This configuration file is deprecated.\n")
-            f.write(f"# Please use {xdg_config} instead.\n")
-            f.write("# This file will be removed in a future version.\n\n")
+            f.write("# This configuration file is deprecated and can be safely removed.\n")
+            f.write(f"# Your configuration has been migrated to: {xdg_config}\n")
+            f.write("# Please remove this file\n\n")
             f.write(old_content)
 
         logging.info(f"Migrated config to: {xdg_config}")

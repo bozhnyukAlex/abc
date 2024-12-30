@@ -93,6 +93,11 @@ def get_config_file() -> str:
     # Legacy config path
     legacy_config = os.path.expanduser('~/.abc.conf')
 
+    # If both configs exist, warn about legacy config
+    if os.path.exists(xdg_config) and os.path.exists(legacy_config):
+        print("Warning: Found both XDG config and legacy config.", file=sys.stderr)
+        print(f"Please remove the legacy config: rm {legacy_config}", file=sys.stderr)
+
     # Return first existing config or default to XDG path
     return xdg_config if os.path.exists(xdg_config) else legacy_config
 
