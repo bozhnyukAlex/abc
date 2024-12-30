@@ -1,23 +1,31 @@
 # abc/.clinerules
 
-- Always read these files to understand the project and the layout:
+- GitHub repo: https://github.com/alestic/abc
 
+- Always read these files to understand the project and the layout:
   - `README.md`
-  - always run this at the beginning of a project to understand the Git repo layout: `make tree`
-  - read files referenced in the above as appropriate for the task at hand
+
+- Always run the following at the beginning of a project to understand the Git repo layout:
+
+  ```bash
+  make tree
+  ```
+
+- Then read files referenced in the above, as appropriate for the task at hand.
 
 - When working on a GitHub issue, follow standard best practices with a branch name like:
   `issue-NN-{fix,feature}-description-$(date _%Y%m%d)
 
-- Use the `git` and `gh` CLIs where it makes sense.
-
 - When an update is complete, the software version can be updated in these five files:
 
-  - `abc_provider_anthropic/pyproject.toml`
-  - `pyproject.toml`
-  - `abc_cli/abc_generate.py`
-  - `README.md`
-  - `../getabc.sh/app/components/OpenSource.tsx`
+  - README.md
+  - abc_cli/abc_generate.py
+  - abc_provider_anthropic/pyproject.toml
+  - abc_provider_aws_bedrock/abc_provider_aws_bedrock/__init__.py
+  - abc_provider_aws_bedrock/pyproject.toml
+  - pyproject.toml
+
+- When we are done adding a feature to `abc`, we should make associated updates in the website which is probably at `../getabc.sh/app/`
 
 - Uninstall
 
@@ -31,5 +39,6 @@
   ```bash
   pipx install -e . &&
   pipx inject abc-cli -e ./abc_provider_anthropic &&
+  pipx inject abc-cli -e ./abc_provider_aws_bedrock &&
   abc_setup --no-prompt
   ```

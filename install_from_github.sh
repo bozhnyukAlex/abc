@@ -192,9 +192,9 @@ main() {
         fi
     fi
 
-    # Run abc setup
+    # Run abc setup in a login shell to get updated PATH
     log "Running abc setup..."
-    abc_setup $NO_PROMPT_OPTION || error "Failed to run abc setup"
+    bash -l -c "abc_setup $NO_PROMPT_OPTION" || error "Failed to run abc setup"
 
     log "Installation completed successfully!"
 }
