@@ -74,9 +74,43 @@ def prompt_user(message, default=True, no_prompt=False):
     if no_prompt:
         return default
 
-    prompt = f"{message} [{'Y/n' if default else 'y/N'}] "
-    response = get_terminal_input(prompt, 'y' if default else 'n')
-    return response.lower() in ['y', 'yes']
+    prompt = f"{message} [{'YES' if default else 'yes'}/{'no' if default else 'NO'}/stop] "
+    response = get_terminal_input(prompt, 'yes' if default else 'no')
+
+    if not response:
+        return default
+
+    response = response.lower()
+    if response in ['y', 'yes']:
+        return True
+    elif response in ['n', 'no']:
+        return False
+    else:
+        print("\nSetup stopped by user")
+        sys.exit(0)
+
+def show_instructions_and_confirm(description, commands, no_prompt=False, default=True):
+    """Show instructions and get confirmation.
+
+    Args:
+        description: Description of what will be done
+        commands: List of commands or instructions
+        no_prompt: Whether to skip confirmation
+        default: Default response (True for YES, False for NO)
+
+    Returns:
+        bool: True if confirmed or no_prompt is True, False otherwise
+    """
+    print()
+    print(description)
+    print()
+    print("Commands to run:")
+    print("---------------")
+    for cmd in commands:
+        print(cmd)
+    print()
+
+    return prompt_user("Would you like me to perform these changes? (\"no\" means you have done them)", default=default, no_prompt=no_prompt)
 
 def backup_file(file_path, timestamp):
     """Create a backup of a file with timestamp."""
@@ -189,7 +223,7 @@ def write_rc_file(file_path, lines):
     with open(path, 'w') as f:
         f.writelines(lines)
 
-def try_modify_rc_file(file_path, source_line, remove=False):
+def try_modify_rc_file(file_path, source_line, remove=False, no_prompt=False):
     """Check if modification is needed and perform it if required."""
     lines = read_rc_file(file_path)
     if lines is None:
@@ -200,14 +234,38 @@ def try_modify_rc_file(file_path, source_line, remove=False):
         logging.info(f"Skipping {Path.home() / file_path}: no modification needed")
         return False
 
+    # Show what we're going to do
+    rc_path = Path.home() / file_path
+    if remove:
+        description = f"About to remove abc block from {rc_path}"
+        commands = [
+            f"# Remove the following block from {rc_path}:",
+            MARKER_BEGIN,
+            MARKER_MIDDLE,
+            source_line,
+            MARKER_END
+        ]
+    else:
+        description = f"About to modify {rc_path}"
+        commands = [
+            f"# Add/update block in {rc_path} to:",
+            MARKER_BEGIN,
+            MARKER_MIDDLE,
+            source_line,
+            MARKER_END
+        ]
+
+    if not show_instructions_and_confirm(description, commands, no_prompt):
+        return False
+
     timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
-    backup_path = (Path.home() / file_path).with_suffix(f'.bak_{timestamp}')
-    shutil.copy2(Path.home() / file_path, backup_path)
+    backup_path = rc_path.with_suffix(f'.bak_{timestamp}')
+    shutil.copy2(rc_path, backup_path)
     logging.info(f"Created backup: {backup_path}")
 
     if remove:
         new_lines, _ = remove_abc_block(lines)
-        logging.info(f"Removing abc block from {Path.home() / file_path}")
+        logging.info(f"Removing abc block from {rc_path}")
     else:
         try:
             existing_block, start, end = find_abc_block(lines)
@@ -215,16 +273,16 @@ def try_modify_rc_file(file_path, source_line, remove=False):
             if existing_block is not None:
                 # Update existing block
                 lines[start:end+1] = new_block
-                logging.info(f"Updating abc block in {Path.home() / file_path}")
+                logging.info(f"Updating abc block in {rc_path}")
             else:
                 # Add new block
                 if lines and lines[-1].strip():
                     lines.append('\n')  # Add newline if file doesn't end with one
                 lines.extend(new_block)
-                logging.info(f"Adding abc block to {Path.home() / file_path}")
+                logging.info(f"Adding abc block to {rc_path}")
             new_lines = lines
         except ValueError as e:
-            logging.error(f"Error processing {Path.home() / file_path}: {str(e)}")
+            logging.error(f"Error processing {rc_path}: {str(e)}")
             return False
 
     write_rc_file(file_path, new_lines)
@@ -241,37 +299,69 @@ def get_config_paths():
 
     return xdg_config, legacy_config
 
-def setup_config(no_prompt=False):
+def setup_config(no_prompt=False, package_dir=None):
     """Set up abc configuration file with API key."""
     xdg_config, legacy_config = get_config_paths()
 
-    # Check for existing configs
-    if legacy_config.exists():
-        if not prompt_user("\nFound config at ~/.abc.conf. Would you like to migrate it to the XDG location?", default=True, no_prompt=no_prompt):
+    # Check for legacy config when XDG config exists
+    if xdg_config.exists() and legacy_config.exists():
+        description = f"Found legacy config at ~/.abc.conf (deprecated)"
+        commands = [
+            "# Will remove legacy config (XDG config at ~/.config/abc/config is primary):",
+            f"rm {legacy_config}"
+        ]
+        if show_instructions_and_confirm(description, commands, no_prompt):
+            legacy_config.unlink()
+            logging.info("Removed legacy configuration file")
+
+    # Handle legacy config migration if XDG doesn't exist
+    if not xdg_config.exists() and legacy_config.exists():
+        description = "Found legacy config at ~/.abc.conf"
+        commands = [
+            "# Create parent directory:",
+            f"mkdir -p {xdg_config.parent}",
+            "",
+            "# Copy config and set permissions:",
+            f"cp {legacy_config} {xdg_config}",
+            f"chmod 600 {xdg_config}",
+            "# Add deprecation notice to old config"
+        ]
+        if show_instructions_and_confirm(description, commands, no_prompt):
+            # Create XDG config directory
+            xdg_config.parent.mkdir(parents=True, exist_ok=True)
+
+            # Copy existing config to XDG location
+            shutil.copy2(legacy_config, xdg_config)
+            xdg_config.chmod(0o600)
+
+            # Add deprecation warning to old config
+            with open(legacy_config, 'r') as f:
+                old_content = f.read()
+            with open(legacy_config, 'w') as f:
+                f.write("# This configuration file is deprecated and can be safely removed.\n")
+                f.write(f"# Your configuration has been migrated to: {xdg_config}\n")
+                f.write("# Please remove this file\n\n")
+                f.write(old_content)
+
+            logging.info(f"Migrated config to: {xdg_config}")
             return True
 
-        # Create XDG config directory
-        xdg_config.parent.mkdir(parents=True, exist_ok=True)
-
-        # Copy existing config to XDG location
-        shutil.copy2(legacy_config, xdg_config)
-        xdg_config.chmod(0o600)
-
-        # Add deprecation warning to old config
-        with open(legacy_config, 'r') as f:
-            old_content = f.read()
-        with open(legacy_config, 'w') as f:
-            f.write("# This configuration file is deprecated and can be safely removed.\n")
-            f.write(f"# Your configuration has been migrated to: {xdg_config}\n")
-            f.write("# Please remove this file\n\n")
-            f.write(old_content)
-
-        logging.info(f"Migrated config to: {xdg_config}")
-        return True
-
     # Check if XDG config exists
-    if xdg_config.exists() and not prompt_user("\nConfiguration file already exists. Would you like to reconfigure it?", default=False, no_prompt=no_prompt):
-        return True
+    if xdg_config.exists():
+        description = f"Configuration file exists at {xdg_config}. Reconfigure?"
+        commands = [
+            "# Create parent directory if needed:",
+            f"mkdir -p {xdg_config.parent}",
+            "",
+            "# Copy template and set permissions:",
+            f"cp {package_dir}/abc.conf.template {xdg_config}",
+            f"chmod 600 {xdg_config}",
+            "",
+            "# Then edit to add your API key:",
+            f"$EDITOR {xdg_config}  # Add your API key from https://console.anthropic.com/settings/keys"
+        ]
+        if not show_instructions_and_confirm(description, commands, no_prompt, default=False):
+            return True
 
     try:
         # Create XDG config directory
@@ -286,6 +376,23 @@ def setup_config(no_prompt=False):
         with importlib.resources.path('abc_cli', 'abc.conf.template') as template_path:
             with open(template_path, 'r') as f:
                 template_content = f.read()
+
+        # Show what we're going to do if creating new config
+        if not xdg_config.exists():
+            description = f"About to create configuration file at {xdg_config}"
+            commands = [
+                "# Create parent directory if needed:",
+                f"mkdir -p {xdg_config.parent}",
+                "",
+                "# Copy template and set permissions:",
+                f"cp {package_dir}/abc.conf.template {xdg_config}",
+                f"chmod 600 {xdg_config}",
+                "",
+                "# Then edit to add your API key:",
+                f"$EDITOR {xdg_config}  # Add your API key from https://console.anthropic.com/settings/keys"
+            ]
+            if not show_instructions_and_confirm(description, commands, no_prompt):
+                return False
 
         # Prompt for API key if interactive
         print("\nPlease enter your Anthropic API key", file=sys.stderr)
@@ -308,46 +415,53 @@ def setup_config(no_prompt=False):
 
 def setup_shell_scripts(no_prompt=False):
     """Setup shell integration scripts and configuration template."""
-    if not prompt_user("\nAbout to add abc files to $HOME/.local/share/ Continue?", no_prompt=no_prompt):
-        print("Setup cancelled")
-        return 0
-
     try:
         # Get package resources
         with importlib.resources.path('abc_cli', 'abc.sh') as shell_script:
             package_dir = shell_script.parent
 
-        # Create ~/.local/share/abc
+        # Show what we're going to do
         share_dir = Path.home() / '.local' / 'share' / 'abc'
-        share_dir.mkdir(parents=True, exist_ok=True)
+        description = "About to set up abc shell integration"
+        commands = [
+            f"# Create directory:",
+            f"mkdir -p {share_dir}",
+            "",
+            "# Install shell scripts with execute permissions:",
+            f"cp {package_dir}/abc.sh {share_dir}/abc.sh",
+            f"cp {package_dir}/abc.tcsh {share_dir}/abc.tcsh",
+            f"chmod 755 {share_dir}/abc.sh",
+            f"chmod 755 {share_dir}/abc.tcsh",
+            "",
+            "# Copy config template:",
+            f"cp {package_dir}/abc.conf.template {share_dir}/abc.conf.template"
+        ]
+        if show_instructions_and_confirm(description, commands, no_prompt):
+            # Create ~/.local/share/abc
+            share_dir.mkdir(parents=True, exist_ok=True)
 
-        # Copy and update shell scripts
-        venv_python = sys.executable  # Get virtualenv Python path
-        scripts = ['abc.sh', 'abc.tcsh']
-        for script in scripts:
-            source = package_dir / script
-            target = share_dir / script
+            # Copy and update shell scripts
+            venv_python = sys.executable  # Get virtualenv Python path
+            scripts = ['abc.sh', 'abc.tcsh']
+            for script in scripts:
+                source = package_dir / script
+                target = share_dir / script
 
-            # Update Python path and copy
-            with open(source, 'r') as f:
-                content = f.read().replace('\\python3', f'\\{venv_python}')
-            with open(target, 'w') as f:
-                f.write(content)
-            target.chmod(0o755)
-            logging.info(f"Installed: {target}")
+                # Update Python path and copy
+                with open(source, 'r') as f:
+                    content = f.read().replace('\\python3', f'\\{venv_python}')
+                with open(target, 'w') as f:
+                    f.write(content)
+                target.chmod(0o755)
+                logging.info(f"Installed: {target}")
 
-        # Copy configuration template
-        template_source = package_dir / 'abc.conf.template'
-        template_target = share_dir / 'abc.conf.template'
-        shutil.copy2(template_source, template_target)
-        logging.info(f"Installed: {template_target}")
-
-        if not prompt_user("\nAbout to add abc commands to shell rc files. Continue?", no_prompt=no_prompt):
-            print("Setup cancelled")
-            return 0
+            # Copy configuration template
+            template_source = package_dir / 'abc.conf.template'
+            template_target = share_dir / 'abc.conf.template'
+            shutil.copy2(template_source, template_target)
+            logging.info(f"Installed: {template_target}")
 
         # Update shell rc files
-        timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         modified = False
         found_shells = []
 
@@ -358,7 +472,7 @@ def setup_shell_scripts(no_prompt=False):
                 continue
             found_shells.append(shell)
 
-            if try_modify_rc_file(rc_file, source_line, remove=False):
+            if try_modify_rc_file(rc_file, source_line, remove=False, no_prompt=no_prompt):
                 modified = True
 
         if modified:
@@ -373,7 +487,7 @@ def setup_shell_scripts(no_prompt=False):
                 print(f"   For {shell}:  source ~/{rc_file}")
 
         # Set up configuration
-        if not setup_config(no_prompt):
+        if not setup_config(no_prompt, package_dir):
             print("\nWarning: Configuration setup failed. You will need to manually configure ~/.abc.conf")
             print(f"You can use {share_dir}/abc.conf.template as a template")
 
@@ -390,35 +504,60 @@ def uninstall(no_prompt=False):
         modified = False
         found_shells = []
 
-        if prompt_user("\nWould you like to remove abc shell integration files from ~/.local/share/abc?", default=True, no_prompt=no_prompt):
-            # Remove ~/.local/share/abc directory
-            share_dir = Path.home() / '.local' / 'share' / 'abc'
-            if share_dir.exists():
+        # Show shell integration removal instructions
+        share_dir = Path.home() / '.local' / 'share' / 'abc'
+        if share_dir.exists():
+            description = "About to remove abc shell integration files"
+            commands = [
+                f"# Remove directory and contents:",
+                f"rm -rf {share_dir}"
+            ]
+            if show_instructions_and_confirm(description, commands, no_prompt):
                 shutil.rmtree(share_dir)
                 logging.info(f"Removed directory: {share_dir}")
 
-        if prompt_user("\nWould you like to remove abc commands from your shell rc files?", default=True, no_prompt=no_prompt):
-            # Remove source blocks from rc files
+        # Show RC file cleanup instructions
+        description = "About to remove abc commands from shell RC files"
+        commands = ["# Will remove abc blocks from:"]
+        for shell, rc_file in SHELL_RC_FILES.items():
+            rc_path = Path.home() / rc_file
+            if rc_path.exists():
+                commands.append(f"- ~/{rc_file}")
+        if show_instructions_and_confirm(description, commands, no_prompt):
             for shell, rc_file in SHELL_RC_FILES.items():
                 rc_path = Path.home() / rc_file
                 if not rc_path.exists():
                     continue
                 found_shells.append(shell)
-                if try_modify_rc_file(rc_file, '', remove=True):
+                if try_modify_rc_file(rc_file, '', remove=True, no_prompt=no_prompt):
                     modified = True
 
-        # Optionally remove configuration files
+        # Show config removal instructions
         xdg_config, legacy_config = get_config_paths()
 
-        if xdg_config.exists() and prompt_user("\nWould you like to remove the configuration file?", default=False, no_prompt=no_prompt):
-            backup_file(xdg_config, timestamp)
-            xdg_config.unlink()
-            logging.info(f"Removed configuration file: {xdg_config}")
+        if xdg_config.exists():
+            description = "About to remove configuration file"
+            commands = [
+                f"# Backup and remove:",
+                f"cp {xdg_config} {xdg_config}.bak",
+                f"rm {xdg_config}"
+            ]
+            if show_instructions_and_confirm(description, commands, no_prompt):
+                backup_file(xdg_config, timestamp)
+                xdg_config.unlink()
+                logging.info(f"Removed configuration file: {xdg_config}")
 
-        if legacy_config.exists() and prompt_user("\nWould you like to remove the legacy configuration file (~/.abc.conf)?", default=False, no_prompt=no_prompt):
-            backup_file(legacy_config, timestamp)
-            legacy_config.unlink()
-            logging.info("Removed legacy configuration file")
+        if legacy_config.exists():
+            description = "About to remove legacy configuration file"
+            commands = [
+                f"# Backup and remove:",
+                f"cp {legacy_config} {legacy_config}.bak",
+                f"rm {legacy_config}"
+            ]
+            if show_instructions_and_confirm(description, commands, no_prompt):
+                backup_file(legacy_config, timestamp)
+                legacy_config.unlink()
+                logging.info("Removed legacy configuration file")
 
         print("\nUninstallation complete. You may now run:")
         print("pipx uninstall abc-cli")
