@@ -53,24 +53,20 @@ is_interactive() {
 
 prompt_user() {
     local message=$1
-    local default=${2:-"y"}  # Default to yes
+    local default=${2:-"yes"}  # Default to yes if not specified
 
     # Skip prompt if --no-prompt flag is set or not interactive
     if $NO_PROMPT || ! is_interactive; then
-        if [ "$default" = "y" ]; then
-            echo "yes"
-        else
-            echo "no"
-        fi
+        echo "$default"
         return
     fi
 
     # Prompt user on stderr to avoid pipe interference
     local prompt
-    if [ "$default" = "y" ]; then
-        prompt=" [Y/n] "
+    if [ "$default" = "yes" ]; then
+        prompt=" [YES/no/stop] "
     else
-        prompt=" [y/N] "
+        prompt=" [yes/NO/stop] "
     fi
 
     echo -n "$message$prompt" >&2
@@ -82,77 +78,173 @@ prompt_user() {
     response=${response,,}  # Convert to lowercase
 
     if [[ -z "$response" ]]; then
-        response=$default
-    fi
-
-    if [[ "$response" =~ ^(yes|y)$ ]]; then
+        echo "$default"
+    elif [[ "$response" =~ ^(yes|y)$ ]]; then
         echo "yes"
-    else
+    elif [[ "$response" =~ ^(no|n)$ ]]; then
         echo "no"
+    else
+        log "Installation stopped by user"
+        exit 1  # Exit with error to prevent "Installation completed successfully!"
+    fi
+}
+
+# Helper function to show instructions and get confirmation
+show_instructions_and_confirm() {
+    local description=$1
+    local commands=$2
+    local requires_sudo=${3:-false}
+    local default=${4:-"yes"}
+
+    echo
+    echo "$description"
+    if [[ "$requires_sudo" == true ]]; then
+        echo "(requires sudo access)"
+    fi
+    echo
+    echo "Commands to run:"
+    echo "---------------"
+    echo "$commands"
+    echo
+
+    local response
+    response=$(prompt_user "Would you like me to perform these changes? (\"no\" means you have done them)" "$default")
+    if [[ "$response" = "yes" ]]; then
+        return 0
+    elif [[ "$response" = "no" ]]; then
+        return 1
+    else
+        # Should never get here since prompt_user exits on stop
+        exit 1
     fi
 }
 
 install_pipx() {
-    # Detect OS
+    local package_manager=""
+    local install_command=""
+    local requires_sudo=false
+    local extra_command=""
+    local commands=""
+
+    # Detect OS and set up commands
     if [[ "$OSTYPE" == "darwin"* ]]; then
-        log "Detected macOS - Installing pipx via Homebrew..."
         if command -v brew &> /dev/null; then
-            if [[ "$(prompt_user "About to install pipx via Homebrew. Continue?" "y")" = "yes" ]]; then
-                brew install pipx || error "Failed to install pipx via Homebrew"
-            else
-                log "Installation cancelled by user"
-                exit 0
-            fi
+            package_manager="Homebrew"
+            commands="brew install pipx"
         else
             error "Homebrew not found. Please install Homebrew first."
         fi
-
     elif command -v apt &> /dev/null; then
-        log "Detected Debian/Ubuntu - Installing pipx via apt..."
-        if [[ "$(prompt_user "About to install pipx via apt. This requires sudo access. Continue?" "y")" = "yes" ]]; then
-            sudo apt update || error "Failed to update apt"
-            sudo apt install -y pipx || error "Failed to install pipx via apt"
-        else
-            log "Installation cancelled by user"
-            exit 0
-        fi
-
+        package_manager="apt"
+        commands="sudo apt update\nsudo apt install -y pipx"
+        requires_sudo=true
+        extra_command="sudo apt update"
+        install_command="sudo apt install -y pipx"
     elif command -v dnf &> /dev/null; then
-        log "Detected RedHat/Fedora - Installing pipx via dnf..."
-        if [[ "$(prompt_user "About to install pipx via dnf. This requires sudo access. Continue?" "y")" = "yes" ]]; then
-            sudo dnf install -y pipx || error "Failed to install pipx via dnf"
-        else
-            log "Installation cancelled by user"
-            exit 0
-        fi
-
+        package_manager="dnf"
+        commands="sudo dnf install -y pipx"
+        requires_sudo=true
+        install_command="sudo dnf install -y pipx"
     elif command -v pacman &> /dev/null; then
-        log "Detected Arch Linux - Installing pipx via pacman..."
-        if [[ "$(prompt_user "About to install pipx via pacman. This requires sudo access. Continue?" "y")" = "yes" ]]; then
-            sudo pacman -S --noconfirm python-pipx || error "Failed to install pipx via pacman"
-        else
-            log "Installation cancelled by user"
-            exit 0
-        fi
-
+        package_manager="pacman"
+        commands="sudo pacman -S --noconfirm python-pipx"
+        requires_sudo=true
+        install_command="sudo pacman -S --noconfirm python-pipx"
     elif command -v yum &> /dev/null; then
-        log "Detected older RedHat/CentOS - Installing pipx via yum..."
-        if [[ "$(prompt_user "About to install pipx via yum. This requires sudo access. Continue?" "y")" = "yes" ]]; then
-            sudo yum install -y python3-pip || error "Failed to install python3-pip via yum"
-            python3 -m pip install --user pipx || error "Failed to install pipx via pip"
+        package_manager="yum"
+        commands="sudo yum install -y python3-pip\npython3 -m pip install --user pipx"
+        requires_sudo=true
+        install_command="sudo yum install -y python3-pip && python3 -m pip install --user pipx"
+    else
+        package_manager="pip"
+        commands="python3 -m pip install --user pipx"
+        install_command="python3 -m pip install --user pipx"
+    fi
+    commands+="\npipx ensurepath"
+
+    # Show instructions and get confirmation
+    if show_instructions_and_confirm \
+        "About to install pipx using $package_manager" \
+        "$(echo -e "$commands")" \
+        "$requires_sudo" \
+        "yes"; then
+        # Execute commands
+        if [[ -n "$extra_command" ]]; then
+            eval "$extra_command" || error "Failed to update package database"
+        fi
+        eval "$install_command" || error "Failed to install pipx"
+    fi
+}
+
+install_abc() {
+    local commands="pipx install git+https://github.com/alestic/abc.git"
+    commands+="\n\n# Then install providers:"
+    for provider in "${PROVIDERS[@]}"; do
+        commands+="\npipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider}"
+    done
+
+    # Show instructions and get confirmation
+    if show_instructions_and_confirm \
+        "About to install abc and providers" \
+        "$(echo -e "$commands")" \
+        "false" \
+        "yes"; then
+        # Execute commands
+        output=$(pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION 2>&1)
+        echo "$output"
+        if [ $? -eq 0 ]; then
+            log "Installation successful"
+        elif echo "$output" | grep -q "installed package abc-cli"; then
+            log "Installation successful despite pipx warning"
         else
-            log "Installation cancelled by user"
-            exit 0
+            error "Failed to install abc via pipx"
         fi
 
-    else
-        log "Unable to detect package manager. Installing pipx via pip..."
-        if [[ "$(prompt_user "About to install pipx via pip. Continue?" "y")" = "yes" ]]; then
-            python3 -m pip install --user pipx || error "Failed to install pipx via pip"
+        # Install providers
+        for provider in "${PROVIDERS[@]}"; do
+            log "Installing ${provider} provider..."
+            output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
+            echo "$output"
+            if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
+                error "Failed to install ${provider} provider"
+            fi
+        done
+    fi
+}
+
+upgrade_abc() {
+    local commands="pipx upgrade abc-cli"
+    commands+="\n\n# Then upgrade providers:"
+    for provider in "${PROVIDERS[@]}"; do
+        commands+="\npipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider}"
+    done
+
+    # Show instructions and get confirmation
+    if show_instructions_and_confirm \
+        "About to upgrade abc and providers" \
+        "$(echo -e "$commands")" \
+        "false" \
+        "yes"; then
+        # Execute commands
+        output=$(pipx upgrade abc-cli 2>&1)
+        echo "$output"
+        if [ $? -eq 0 ]; then
+            log "Upgrade successful"
+        elif echo "$output" | grep -q "upgraded package abc-cli"; then
+            log "Upgrade successful despite pipx warning"
         else
-            log "Installation cancelled by user"
-            exit 0
+            error "Failed to upgrade abc"
         fi
+
+        # Upgrade providers
+        for provider in "${PROVIDERS[@]}"; do
+            log "Upgrading ${provider} provider..."
+            output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
+            echo "$output"
+            if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
+                error "Failed to upgrade ${provider} provider"
+            fi
+        done
     fi
 }
 
@@ -171,64 +263,24 @@ main() {
     log "Ensuring pipx apps are in PATH..."
     pipx ensurepath || error "Failed to ensure pipx apps are in PATH"
 
-    # Check if abc is already installed
-    if pipx list | grep -q "abc-cli"; then
+    # Handle abc installation/upgrade
+    if pipx list 2>/dev/null | grep -q "abc-cli"; then
         log "abc is already installed, attempting upgrade..."
-        if [[ "$(prompt_user "About to upgrade abc via pipx. Continue?" "y")" = "yes" ]]; then
-            # Capture and display pipx output, then check for successful upgrade
-            output=$(pipx upgrade abc-cli 2>&1)
-            echo "$output"
-            if [ $? -eq 0 ]; then
-                log "Upgrade successful"
-            elif echo "$output" | grep -q "upgraded package abc-cli"; then
-                log "Upgrade successful despite pipx warning"
-            else
-                error "Failed to upgrade abc"
-            fi
-            # Upgrade all providers
-            for provider in "${PROVIDERS[@]}"; do
-                log "Upgrading ${provider} provider..."
-                output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
-                echo "$output"
-                if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
-                    error "Failed to upgrade ${provider} provider"
-                fi
-            done
-        else
-            log "Upgrade cancelled by user"
-            exit 0
-        fi
+        upgrade_abc
     else
         log "Installing abc from GitHub..."
-        if [[ "$(prompt_user "About to install abc via pipx. Continue?" "y")" = "yes" ]]; then
-            # Capture and display pipx output, then check for successful install
-            output=$(pipx install git+https://github.com/alestic/abc.git $FORCE_OPTION 2>&1)
-            echo "$output"
-            if [ $? -eq 0 ]; then
-                log "Installation successful"
-            elif echo "$output" | grep -q "installed package abc-cli"; then
-                log "Installation successful despite pipx warning"
-            else
-                error "Failed to install abc via pipx"
-            fi
-            # Install all providers
-            for provider in "${PROVIDERS[@]}"; do
-                log "Installing ${provider} provider..."
-                output=$(pipx inject abc-cli abc-provider-${provider}@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_${provider} $FORCE_OPTION 2>&1)
-                echo "$output"
-                if [ $? -ne 0 ] && ! echo "$output" | grep -q "injected package"; then
-                    error "Failed to install ${provider} provider"
-                fi
-            done
-        else
-            log "Installation cancelled by user"
-            exit 0
-        fi
+        install_abc
     fi
 
     # Run abc setup in a login shell to get updated PATH
     log "Running abc setup..."
-    bash -l -c "abc_setup $NO_PROMPT_OPTION" || error "Failed to run abc setup"
+    if show_instructions_and_confirm \
+        "About to run abc setup" \
+        "bash -l -c \"abc_setup $NO_PROMPT_OPTION\"" \
+        "false" \
+        "yes"; then
+        bash -l -c "abc_setup $NO_PROMPT_OPTION" || error "Failed to run abc setup"
+    fi
 
     log "Installation completed successfully!"
 }

@@ -42,3 +42,6 @@
   pipx inject abc-cli -e ./abc_provider_aws_bedrock &&
   abc_setup --no-prompt
   ```
+
+- When we create GitHub issues, pull requests, and git commits, we always want to append:
+  "[Created and submitted by AI: Cline v3 + Claude 3.5 Sonnet]"
