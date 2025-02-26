@@ -43,5 +43,5 @@
   abc_setup --no-prompt
   ```
 
-- When we create GitHub issues, pull requests, and git commits, we always want to append:
-  "[Created and submitted by AI: Cline v3 + Claude 3.5 Sonnet]"
+- When we create documents, GitHub issues, pull requests, and git commits, we always want to note this at the end (or in comment at top of new code files):
+  "[Created and submitted by AI: Cline v3 + Claude 3.7 Sonnet]"
