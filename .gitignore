@@ -39,7 +39,9 @@ ENV/
 Thumbs.db
 
 # Project specific
-work/
+.claude/settings.local.json
+work*/
+result
 *.log
 .coverage
 htmlcov/
