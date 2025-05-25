@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "abc-provider-anthropic"
-version = "2025.05.24"
+version = "2025.05.25"
 description = "Anthropic LLM provider for abc-cli"
 readme = "README.md"
 requires-python = ">=3.8"
