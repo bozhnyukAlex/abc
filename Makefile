@@ -23,7 +23,13 @@ help: ## Display this help message
 
 .PHONY: install-pipx
 install-pipx:
-	@$(PYTHON) -m pip install --user --quiet pipx
+	@if ! command -v pipx &> /dev/null; then \
+		echo "pipx is not installed. Please install it using your system package manager:"; \
+		echo "  Ubuntu/Debian: sudo apt install pipx"; \
+		echo "  macOS: brew install pipx"; \
+		echo "  Other: python3 -m pip install --user pipx"; \
+		exit 1; \
+	fi
 	@$(PYTHON) -m pipx ensurepath
 
 .PHONY: install
