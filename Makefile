@@ -33,10 +33,34 @@ install-pipx:
 	@$(PYTHON) -m pipx ensurepath
 
 .PHONY: install
-install: install-pipx ## Install abc
+install: install-pipx ## Install abc with all providers
 	@echo "Installing abc using pipx..."
 	@$(PYTHON) -m pipx install --force .
+	@echo "Installing providers..."
+	@$(PYTHON) -m pipx inject abc-cli ./abc_provider_anthropic
+	@$(PYTHON) -m pipx inject abc-cli ./abc_provider_aws_bedrock
 	@abc_setup
+
+.PHONY: install-dev
+install-dev: install-pipx ## Install abc in development mode (editable)
+	@echo "Installing abc in development mode..."
+	@$(PYTHON) -m pipx install -e .
+	@echo "Installing providers in development mode..."
+	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_anthropic
+	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_aws_bedrock
+	@abc_setup
+
+.PHONY: install-nix
+install-nix: ## Install abc using Nix
+	@echo "Installing abc using Nix..."
+	@nix profile install .
+	@abc_setup
+
+.PHONY: uninstall-nix
+uninstall-nix: ## Uninstall abc from Nix profile
+	@echo "Uninstalling abc from Nix profile..."
+	@abc_setup --uninstall
+	@nix profile remove abc
 
 .PHONY: setup
 setup: ## Re-create the config file
