@@ -16,10 +16,8 @@ source ~/.nix-profile/share/abc/abc.sh
 # Create configuration file
 mkdir -p ~/.config/abc
 cat > ~/.config/abc/config << EOF
-[DEFAULT]
+[default]
 provider = anthropic
-
-[anthropic]
 api_key = YOUR_ANTHROPIC_API_KEY_HERE
 model = claude-sonnet-4-20250514
 EOF
@@ -29,56 +27,17 @@ chmod 600 ~/.config/abc/config
 abc "list files in current directory"
 ```
 
-### Using Home-Manager (Recommended)
+### Home-Manager Support
 
-Add to your `home.nix`:
-
-```nix
-{
-  # Import the abc module
-  imports = [
-    (builtins.fetchTarball {
-      url = "https://github.com/alestic/abc/archive/main.tar.gz";
-    } + "/nix/home-manager-module.nix")
-  ];
-
-  # Enable abc with configuration
-  programs.abc = {
-    enable = true;
-    settings = {
-      provider = "anthropic";
-      anthropic = {
-        api_key = "YOUR_API_KEY_HERE";  # Consider using secrets management
-        model = "claude-sonnet-4-20250514";
-      };
-    };
-  };
-}
-```
-
-### NixOS System-Wide Installation
-
-Add to your `configuration.nix`:
-
-```nix
-{
-  environment.systemPackages = [
-    (import (builtins.fetchTarball {
-      url = "https://github.com/alestic/abc/archive/main.tar.gz";
-    })).packages.${pkgs.system}.default
-  ];
-}
-```
+Home-Manager support is not yet available for abc. If you're interested in declarative configuration through Home-Manager, please [request this feature](https://github.com/alestic/abc/issues).
 
 ## Configuration
 
-Unlike the traditional installation method, the Nix version does not include an interactive setup wizard. You must create your configuration file manually at `~/.config/abc/config`:
+Unlike the traditional `abc` installation method, the Nix version does not include an interactive setup wizard. You must create your configuration file manually at `~/.config/abc/config`:
 
 ```ini
-[DEFAULT]
+[default]
 provider = anthropic
-
-[anthropic]
 api_key = sk-ant-api03-...
 model = claude-sonnet-4-20250514
 
@@ -101,7 +60,7 @@ The Nix installation provides shell integration scripts but does not modify your
    echo 'source ~/.nix-profile/share/abc/abc.sh' >> ~/.bashrc
    ```
 
-3. **Use Home-Manager** (declarative, recommended)
+3. **Use Home-Manager** (not yet available - see above)
 
 ## Differences from Traditional Installation
 
@@ -110,7 +69,7 @@ The Nix installation provides shell integration scripts but does not modify your
 | Installation | `pipx install abc-cli` | `nix profile install github:alestic/abc` |
 | Providers | Installed separately | All bundled |
 | Setup wizard | Interactive (`abc_setup`) | Manual config |
-| Shell integration | Modifies RC files | Source manually or use home-manager |
+| Shell integration | Modifies RC files | Source manually |
 | Uninstall | `abc_setup --uninstall` | `nix profile remove abc` |
 
 ## Available Packages
@@ -137,13 +96,13 @@ source $ABC_SHELL_INTEGRATION/abc.sh
 ## Known Limitations
 
 1. No interactive setup wizard - configuration must be created manually
-2. Shell integration requires manual sourcing or home-manager
+2. Shell integration requires manual sourcing
 3. All providers are bundled - cannot selectively install providers
 4. First run does not provide configuration guidance
 
 ## Feedback Welcome
 
-This is an experimental first implementation of Nix support for abc. We welcome feedback from the Nix community:
+This is an experimental first implementation of Nix support for `abc`. We welcome feedback from the Nix community:
 
 - Report issues or suggestions on [issue #24](https://github.com/alestic/abc/issues/24)
 - The implementation may change based on community feedback
@@ -154,8 +113,8 @@ This is an experimental first implementation of Nix support for abc. We welcome 
 The Nix implementation:
 - Uses a flake-based approach for modern Nix compatibility
 - Wraps Python executables to ensure provider discovery works
-- Provides a home-manager module for declarative configuration
-- Maintains compatibility with all existing abc functionality
+- Home-Manager module support is planned for future releases
+- Maintains compatibility with all existing `abc` functionality
 
 For more details, see the `flake.nix` file in the repository.
 
