@@ -30,16 +30,31 @@ abc (AI Bash Command) is a command-line tool that translates natural language de
 
 ### Installation
 ```bash
-# Development install
+# Development install (using Makefile - recommended)
+make install-dev
+
+# Manual development install
 pipx install -e .
 pipx inject abc-cli -e ./abc_provider_anthropic
 pipx inject abc-cli -e ./abc_provider_aws_bedrock
 abc_setup --no-prompt
+
+# Regular install from source
+make install
+
+# Nix install (alternative)
+make install-nix
 ```
 
 ### Testing
 ```bash
-# Run all tests
+# Run all tests (using Makefile - creates venv automatically)
+make test
+
+# Run tests with coverage report
+COVERAGE=1 make test
+
+# Manual testing (requires setting up venv first)
 python -m pytest
 
 # Run with coverage
@@ -47,12 +62,35 @@ python -m pytest --cov=abc_cli
 
 # Run specific test file
 python -m pytest abc_cli/tests/test_abc_generate.py
+
+# Test specific provider
+python -m pytest abc_provider_anthropic/tests/
+python -m pytest abc_provider_aws_bedrock/tests/
+```
+
+### Development Utilities
+```bash
+# Show project file tree
+make tree
+
+# Clean build artifacts and cache
+make clean
+
+# Re-run shell setup (if abc command stops working)
+make setup
 ```
 
 ### Uninstall
 ```bash
+# Complete uninstall (using Makefile)
+make uninstall
+
+# Manual uninstall
 abc_setup --uninstall --no-prompt
 pipx uninstall abc-cli
+
+# Nix uninstall
+make uninstall-nix
 ```
 
 ## Critical Implementation Details
@@ -70,6 +108,7 @@ pipx uninstall abc-cli
    - `pyproject.toml` (main package)
    - Provider packages' `pyproject.toml` files
    - Any version strings in the code
+6. **Testing Structure**: Tests use pytest with markers (unit, integration, slow) and separate test suites for each provider
 
 ## Working with Providers
 
@@ -79,3 +118,13 @@ When implementing or modifying providers:
 3. Register via entry point in pyproject.toml
 4. Support both environment variables and config file for API keys
 5. Handle danger level evaluation in generated commands
+
+## Key File Locations
+
+- **Shell Integration**: `abc_cli/abc.sh` and `abc_cli/abc.tcsh` - shell functions that users actually run
+- **Main CLI**: `abc_cli/abc_generate.py` - core command generation logic
+- **Provider Base**: `abc_cli/llm_provider.py` - abstract base class for all providers
+- **Setup Script**: `abc_cli/abc_setup.py` - handles shell integration installation
+- **Config Template**: `abc_cli/abc.conf.template` - example configuration
+
+<!-- [Created by AI: Claude Code] -->
