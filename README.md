@@ -78,7 +78,7 @@ Remember to always review the generated commands before executing them, especial
 ## Options
 
 - `-c, --config CONFIGFILE`: Path to the primary configuration file. (Defaults to $ABC_CONFIG or "$HOME/.abc.conf")
-- `--use SECTION`: Use specific configuration section (e.g., --use o1 if you configured an OpenAI o1 config)
+- `--use SECTION`: Use specific configuration section (e.g., --use gpt-5 if you configured an OpenAI GPT-5 config)
 - `--verbose`: Provides detailed information about the program's execution.
 - `--debug`: Provides debug information. Only use this when troubleshooting issues.
 - `--version`: Displays the program version and exits.
@@ -110,10 +110,10 @@ provider = openai
 api_key = {OPENAI_API_KEY}
 model = gpt-4o
 
-[o1]  # OpenAI o1 config
+[gpt-5]  # OpenAI GPT-5 config
 provider = openai
 api_key = {OPENAI_API_KEY}
-model = o1
+model = gpt-5
 ```
 
 Use different configurations with the --use option:
@@ -124,8 +124,8 @@ abc "list files by size"
 # Use GPT-4o config
 abc --use 4o "list files by size"
 
-# Use OpenAI o1 config
-abc --use o1 "list files by size"
+# Use OpenAI GPT-5 config
+abc --use gpt-5 "list files by size"
 ```
 
 Note: The OpenAI LLM provider plugin for `abc` has not yet been published.

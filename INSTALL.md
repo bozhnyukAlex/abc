@@ -163,10 +163,10 @@ provider = anthropic
 api_key = {ANTHROPIC_API_KEY}
 model = claude-sonnet-4-20250514
 
-[o1]  # OpenAI o1 config
+[gpt-5]  # OpenAI GPT-5 config
 provider = openai
 api_key = {OPENAI_API_KEY}
-model = o1
+model = gpt-5
 ```
 
 Each section requires:
@@ -182,8 +182,8 @@ Use different configurations with the --use option:
 # Use default config
 abc "list files by size"
 
-# Use OpenAI o1 config
-abc --use o1 "list files by size"
+# Use OpenAI GPT-5 config
+abc --use gpt-5 "list files by size"
 ```
 
 ## Troubleshooting
