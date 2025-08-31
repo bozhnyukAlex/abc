@@ -19,7 +19,7 @@ cat > ~/.config/abc/config << EOF
 [default]
 provider = anthropic
 api_key = YOUR_ANTHROPIC_API_KEY_HERE
-model = claude-sonnet-4-20250514
+model = claude-sonnet-4-0
 EOF
 chmod 600 ~/.config/abc/config
 
@@ -39,7 +39,7 @@ Unlike the traditional `abc` installation method, the Nix version does not inclu
 [default]
 provider = anthropic
 api_key = sk-ant-api03-...
-model = claude-sonnet-4-20250514
+model = claude-sonnet-4-0
 
 [aws-bedrock]
 region = us-east-1
