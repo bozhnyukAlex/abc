@@ -6,7 +6,7 @@ AWS Bedrock LLM provider plugin for [abc-cli](https://github.com/alestic/abc). T
 
 ```bash
 # When installing abc-cli from GitHub
-pipx inject abc-cli abc_provider_aws_bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock
+pipx inject abc-cli abc-provider-aws-bedrock@git+https://github.com/alestic/abc.git#subdirectory=abc_provider_aws_bedrock
 
 # For development (from cloned repository)
 pipx inject abc-cli -e ./abc_provider_aws_bedrock
