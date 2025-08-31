@@ -1,0 +1,32 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "abc-provider-openai"
+version = "2025.08.31"
+description = "OpenAI LLM provider for abc-cli"
+readme = "README.md"
+requires-python = ">=3.8"
+license = "Apache-2.0"
+authors = [
+    { name = "Claude 3.5 Sonnet", email = "" },
+    { name = "Eric Hammond", email = "" }
+]
+dependencies = [
+    "openai>=1.0.0"
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest>=7.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-v --cov=abc_provider_openai"
+
+[project.entry-points."abc.llm_providers"]
+openai = "abc_provider_openai.llm_provider:OpenAIProvider"

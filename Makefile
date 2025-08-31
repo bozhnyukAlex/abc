@@ -39,6 +39,7 @@ install: install-pipx ## Install abc with all providers
 	@echo "Installing providers..."
 	@$(PYTHON) -m pipx inject abc-cli ./abc_provider_anthropic
 	@$(PYTHON) -m pipx inject abc-cli ./abc_provider_aws_bedrock
+	@$(PYTHON) -m pipx inject abc-cli ./abc_provider_openai
 	@abc_setup
 
 .PHONY: install-dev
@@ -48,6 +49,7 @@ install-dev: install-pipx ## Install abc in development mode (editable)
 	@echo "Installing providers in development mode..."
 	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_anthropic
 	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_aws_bedrock
+	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_openai
 	@abc_setup
 
 .PHONY: install-nix
