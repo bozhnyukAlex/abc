@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = "Apache-2.0"
 dependencies = [
-    "boto3>=1.35.0",  # Latest stable boto3 version
+    "boto3>=1.40.0",  # Latest stable boto3 version with enhanced Bedrock support
 ]
 
 [project.optional-dependencies]
