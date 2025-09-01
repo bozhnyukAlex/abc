@@ -284,6 +284,9 @@ main() {
     fi
 
     log "Installation completed successfully!"
+
+    # Consume any remaining input to prevent curl write errors when piped from web
+    cat > /dev/null 2>/dev/null || true
 }
 
 # Handle interrupts gracefully
