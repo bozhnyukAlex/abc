@@ -18,6 +18,7 @@ abc (AI Bash Command) is a command-line tool that translates natural language de
 ### Provider Plugins
 - **abc_provider_anthropic**: Anthropic Claude provider
 - **abc_provider_aws_bedrock**: AWS Bedrock provider
+- **abc_provider_openai**: OpenAI GPT provider
 - Providers are discovered via Python entry points defined in pyproject.toml
 
 ### Key Design Patterns
@@ -67,6 +68,7 @@ python -m pytest abc_cli/tests/test_abc_generate.py
 # Test specific provider
 python -m pytest abc_provider_anthropic/tests/
 python -m pytest abc_provider_aws_bedrock/tests/
+python -m pytest abc_provider_openai/tests/
 ```
 
 ### Development Utilities
