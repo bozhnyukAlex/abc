@@ -14,6 +14,7 @@ FORCE_OPTION=
 PROVIDERS=(
     "anthropic"
     "aws_bedrock"
+    "openai"
 )
 
 # Parse command line arguments

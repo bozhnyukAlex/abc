@@ -37,6 +37,7 @@ make install-dev
 pipx install -e .
 pipx inject abc-cli -e ./abc_provider_anthropic
 pipx inject abc-cli -e ./abc_provider_aws_bedrock
+pipx inject abc-cli -e ./abc_provider_openai
 abc_setup --no-prompt
 
 # Regular install from source
