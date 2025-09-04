@@ -26,12 +26,6 @@ MOCK_CONFIG_FULL = {
     "organization": "test_org",
 }
 
-MOCK_CONFIG_AZURE = {
-    "provider": "openai",
-    "api_key": MOCK_API_KEY,
-    "api_base": "https://test.openai.azure.com/",
-    "api_version": "2023-12-01-preview",
-}
 
 def test_init_wrong_provider():
     """Test provider initialization fails with wrong provider."""
@@ -66,13 +60,6 @@ def test_init_full_config():
     assert provider.timeout == 60.0
     assert provider.organization == "test_org"
 
-def test_init_azure_config():
-    """Test provider initialization with Azure OpenAI config."""
-    provider = OpenAIProvider(MOCK_CONFIG_AZURE)
-    assert provider.api_key == MOCK_API_KEY
-    assert provider.api_base == "https://test.openai.azure.com/"
-    assert provider.api_version == "2023-12-01-preview"
-
 def test_init_missing_api_key():
     """Test provider initialization fails without API key."""
     config = {"provider": "openai"}
@@ -92,7 +79,6 @@ def test_get_config_schema():
     
     # Check optional fields are present
     assert "organization" in schema["properties"]
-    assert "api_base" in schema["properties"]
     assert "timeout" in schema["properties"]
 
 @patch('openai.OpenAI')

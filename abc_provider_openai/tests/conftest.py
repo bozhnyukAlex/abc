@@ -43,16 +43,6 @@ def mock_config_full():
     }
 
 @pytest.fixture
-def mock_config_azure():
-    """Fixture providing Azure OpenAI configuration."""
-    return {
-        "provider": "openai",
-        "api_key": "test_api_key",
-        "api_base": "https://test.openai.azure.com/",
-        "api_version": "2023-12-01-preview",
-    }
-
-@pytest.fixture
 def mock_context():
     """Fixture providing a basic context dictionary."""
     return {

@@ -48,21 +48,6 @@ model = gpt-4o
 - `max_tokens`: Maximum response tokens (optional, default: 1000)
 - `timeout`: Request timeout in seconds (optional, default: 30)
 - `organization`: OpenAI organization ID (optional)
-- `api_base`: Custom API endpoint for Azure OpenAI (optional)
-- `api_version`: API version for Azure OpenAI (optional)
-
-### Azure OpenAI Support
-
-For Azure OpenAI deployments:
-
-```ini
-[azure]
-provider = openai
-api_key = YOUR_AZURE_KEY
-api_base = https://your-resource.openai.azure.com/
-api_version = 2023-12-01-preview
-model = your-deployment-name
-```
 
 ## Usage
 

@@ -31,10 +31,8 @@ class OpenAIProvider(LLMProvider):
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
         
-        # Optional organization and API base for Azure OpenAI
+        # Optional organization ID
         self.organization = config.get('organization')
-        self.api_base = config.get('api_base')
-        self.api_version = config.get('api_version')
         
         # Initialize OpenAI client
         client_kwargs = {
@@ -44,9 +42,6 @@ class OpenAIProvider(LLMProvider):
         
         if self.organization:
             client_kwargs['organization'] = self.organization
-            
-        if self.api_base:
-            client_kwargs['base_url'] = self.api_base
             
         self.client = openai.OpenAI(**client_kwargs)
 
@@ -123,14 +118,6 @@ class OpenAIProvider(LLMProvider):
                 "organization": {
                     "type": "string",
                     "description": "OpenAI organization ID (optional)"
-                },
-                "api_base": {
-                    "type": "string", 
-                    "description": "Custom API endpoint (for Azure OpenAI)"
-                },
-                "api_version": {
-                    "type": "string",
-                    "description": "API version (for Azure OpenAI)"
                 }
             },
             "required": ["provider", "api_key"]
