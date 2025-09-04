@@ -45,7 +45,7 @@ install: install-pipx ## Install abc with all providers
 .PHONY: install-dev
 install-dev: install-pipx ## Install abc in development mode (editable)
 	@echo "Installing abc in development mode..."
-	@$(PYTHON) -m pipx install -e .
+	@$(PYTHON) -m pipx install --force -e .
 	@echo "Installing providers in development mode..."
 	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_anthropic
 	@$(PYTHON) -m pipx inject abc-cli -e ./abc_provider_aws_bedrock
