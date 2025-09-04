@@ -12,6 +12,7 @@ DEFAULT_MODEL = 'gpt-5'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
 DEFAULT_TIMEOUT = 120
+DEFAULT_REASONING_EFFORT = 'minimal'  # Minimize reasoning tokens for simple command generation
 
 class OpenAIProvider(LLMProvider):
     """OpenAI LLM provider."""
@@ -30,6 +31,7 @@ class OpenAIProvider(LLMProvider):
         self.temperature = float(config.get('temperature', DEFAULT_TEMPERATURE))
         self.max_tokens = int(config.get('max_tokens', DEFAULT_MAX_TOKENS))
         self.timeout = float(config.get('timeout', DEFAULT_TIMEOUT))
+        self.reasoning_effort = config.get('reasoning_effort', DEFAULT_REASONING_EFFORT)
         
         # Optional organization ID
         self.organization = config.get('organization')
@@ -69,12 +71,30 @@ class OpenAIProvider(LLMProvider):
                 ]
             }
             
+            # Add reasoning_effort for GPT-5 models
+            if 'gpt-5' in self.model.lower():
+                request_params["reasoning_effort"] = self.reasoning_effort
+            
             # Only add temperature if it's not the default 0.0 (some models don't support 0.0)
             if self.temperature != 0.0:
                 request_params["temperature"] = self.temperature
                 
             response = self.client.chat.completions.create(**request_params)
-            return response.choices[0].message.content.strip()
+            
+            # Debug logging
+            import logging
+            logging.debug(f"OpenAI response: {response}")
+            logging.debug(f"Response choices: {response.choices}")
+            if response.choices:
+                logging.debug(f"First choice: {response.choices[0]}")
+                logging.debug(f"Message: {response.choices[0].message}")
+                logging.debug(f"Content: {response.choices[0].message.content}")
+            
+            result = response.choices[0].message.content
+            if result is None:
+                logging.warning("OpenAI returned None content")
+                return ""
+            return result.strip()
         except openai.APIError as e:
             raise RuntimeError(f"OpenAI API error: {e}")
         except Exception as e:
@@ -118,6 +138,12 @@ class OpenAIProvider(LLMProvider):
                 "organization": {
                     "type": "string",
                     "description": "OpenAI organization ID (optional)"
+                },
+                "reasoning_effort": {
+                    "type": "string",
+                    "description": "Reasoning effort for GPT-5 models (minimal, low, medium, high)",
+                    "default": DEFAULT_REASONING_EFFORT,
+                    "enum": ["minimal", "low", "medium", "high"]
                 }
             },
             "required": ["provider", "api_key"]
