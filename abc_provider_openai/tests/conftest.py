@@ -35,7 +35,7 @@ def mock_config_full():
     return {
         "provider": "openai",
         "api_key": "test_api_key",
-        "model": "gpt-4-test",
+        "model": "gpt-5-test",
         "temperature": "0.5",
         "max_tokens": "500",
         "timeout": "60",

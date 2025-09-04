@@ -8,7 +8,7 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'gpt-4-turbo-preview'
+DEFAULT_MODEL = 'gpt-5'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
 DEFAULT_TIMEOUT = 30
@@ -103,7 +103,7 @@ class OpenAIProvider(LLMProvider):
                     "type": "string",
                     "description": "OpenAI model to use",
                     "default": DEFAULT_MODEL,
-                    "examples": ["gpt-4-turbo-preview", "gpt-4", "gpt-3.5-turbo"]
+                    "examples": ["gpt-5", "gpt-4o", "gpt-4-turbo"]
                 },
                 "temperature": {
                     "type": "string",

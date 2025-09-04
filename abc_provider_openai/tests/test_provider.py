@@ -19,7 +19,7 @@ MOCK_CONFIG = {
 MOCK_CONFIG_FULL = {
     "provider": "openai",
     "api_key": MOCK_API_KEY,
-    "model": "gpt-4-test",
+    "model": "gpt-5-test",
     "temperature": "0.5",
     "max_tokens": "500",
     "timeout": "60",
@@ -60,7 +60,7 @@ def test_init_full_config():
     """Test provider initialization with full config."""
     provider = OpenAIProvider(MOCK_CONFIG_FULL)
     assert provider.api_key == MOCK_API_KEY
-    assert provider.model == "gpt-4-test"
+    assert provider.model == "gpt-5-test"
     assert provider.temperature == 0.5
     assert provider.max_tokens == 500
     assert provider.timeout == 60.0

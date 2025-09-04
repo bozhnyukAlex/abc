@@ -24,26 +24,26 @@ Add an OpenAI configuration section to your `~/.abc.conf` file:
 [default]
 provider = openai
 api_key = {OPENAI_API_KEY}
-model = gpt-4-turbo-preview
+model = gpt-5
 
-[gpt-3.5]
+[gpt-4o]
 provider = openai
 api_key = {OPENAI_API_KEY}
-model = gpt-3.5-turbo
+model = gpt-4o
 ```
 
 ### Supported Models
 
-- `gpt-4-turbo-preview` (default)
-- `gpt-4`
-- `gpt-3.5-turbo`
+- `gpt-5` (default)
+- `gpt-4o`
+- `gpt-4-turbo`
 - Other OpenAI chat completion models
 
 ### Configuration Options
 
 - `provider`: Must be "openai"
 - `api_key`: Your OpenAI API key (required)
-- `model`: Model to use (optional, defaults to gpt-4-turbo-preview)
+- `model`: Model to use (optional, defaults to gpt-5)
 - `temperature`: Sampling temperature 0.0-2.0 (optional, default: 0.0, omitted for newer models that don't support 0.0)
 - `max_tokens`: Maximum response tokens (optional, default: 1000)
 - `timeout`: Request timeout in seconds (optional, default: 30)
@@ -73,7 +73,7 @@ Once configured, use abc with your OpenAI configuration:
 abc "list files by size"
 
 # Use specific config section
-abc --use gpt-3.5 "find large files"
+abc --use gpt-4o "find large files"
 ```
 
 ## API Key Setup
