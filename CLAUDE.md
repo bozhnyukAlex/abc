@@ -107,10 +107,8 @@ make uninstall-nix
    - Primary: `~/.config/abc/config` (XDG standard)
    - Legacy: `~/.abc.conf` (for backward compatibility)
 4. **Danger Level Evaluation**: Commands are evaluated for potential harm before presentation
-5. **Version Updates**: When releasing, update version in:
-   - `pyproject.toml` (main package)
-   - Provider packages' `pyproject.toml` files
-   - Any version strings in the code
+5. **Version Updates**: When releasing, update ALL version strings to the same date (YYYY.MM.DD format).
+   To find all version strings: `git grep -i 'version.*20'`
 6. **Testing Structure**: Tests use pytest with markers (unit, integration, slow) and separate test suites for each provider
 
 ## Working with Providers
