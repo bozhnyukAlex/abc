@@ -46,7 +46,7 @@ model = gpt-4o
 - `model`: Model to use (optional, defaults to gpt-5)
 - `temperature`: Sampling temperature 0.0-2.0 (optional, default: 0.0, omitted for newer models that don't support 0.0)
 - `max_tokens`: Maximum response tokens (optional, default: 1000)
-- `timeout`: Request timeout in seconds (optional, default: 30)
+- `timeout`: Request timeout in seconds (optional, default: 120)
 - `organization`: OpenAI organization ID (optional)
 
 ## Usage

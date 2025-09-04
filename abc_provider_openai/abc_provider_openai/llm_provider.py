@@ -11,7 +11,7 @@ from abc_cli import LLMProvider
 DEFAULT_MODEL = 'gpt-5'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
-DEFAULT_TIMEOUT = 30
+DEFAULT_TIMEOUT = 120
 
 class OpenAIProvider(LLMProvider):
     """OpenAI LLM provider."""

@@ -48,7 +48,7 @@ def test_init_minimal_config():
     assert provider.model == DEFAULT_MODEL
     assert provider.temperature == 0.0
     assert provider.max_tokens == 1000
-    assert provider.timeout == 30.0
+    assert provider.timeout == 120.0
 
 def test_init_full_config():
     """Test provider initialization with full config."""
