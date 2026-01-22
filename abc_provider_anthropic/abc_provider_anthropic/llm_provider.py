@@ -5,7 +5,7 @@ from typing import Dict, Any
 
 from abc_cli import LLMProvider
 
-DEFAULT_MODEL = 'claude-sonnet-4-0'
+DEFAULT_MODEL = 'claude-opus-4-5'
 DEFAULT_TEMPERATURE = 0.0
 DEFAULT_MAX_TOKENS = 1000
 
