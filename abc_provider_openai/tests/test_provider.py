@@ -80,6 +80,7 @@ def test_get_config_schema():
     # Check optional fields are present
     assert "organization" in schema["properties"]
     assert "timeout" in schema["properties"]
+    assert "rule_path" in schema["properties"]
 
 @patch('openai.OpenAI')
 def test_generate_command(mock_openai):

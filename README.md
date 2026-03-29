@@ -84,6 +84,7 @@ Remember to always review the generated commands before executing them, especial
 - `--version`: Displays the program version and exits.
 - `-h, --help`: Shows help message and exits.
 - `--shell`: Specify the shell to generate commands for (choices: bash, zsh, tcsh; default: bash)
+- `--rules PATH`: Load additional system prompt instructions from a Markdown file for this invocation
 
 ## Environment
 
@@ -104,6 +105,7 @@ Configuration sections allow using different LLM providers and models:
 provider = anthropic
 api_key = {ANTHROPIC_API_KEY}
 model = claude-sonnet-4-0
+rule_path = ~/.config/abc/rules.md
 
 [4o]  # GPT-4o config
 provider = openai
@@ -126,6 +128,16 @@ abc --use 4o "list files by size"
 
 # Use OpenAI GPT-5 config
 abc --use gpt-5 "list files by size"
+```
+
+If `rule_path` is set in a provider config section, `abc` reads that Markdown file and appends its contents to the system prompt as supplemental instructions. You can override it for a single invocation with `--rules`, which takes precedence over `rule_path`.
+
+```bash
+# Use rules from the config section
+abc --use gpt-5 "list files by size"
+
+# Override config rules for one call
+abc --use gpt-5 --rules ~/tmp/strict-shell-rules.md "list files by size"
 ```
 
 Note: The OpenAI LLM provider plugin for `abc` has not yet been published.

@@ -68,6 +68,89 @@ class TestCommandGeneration:
                 assert output == "#DANGEROUS# rm -rf /"
                 assert "Warning: This command is potentially dangerous" in error
 
+    def test_rules_loaded_from_config(self, isolated_environment, tmp_path, mock_provider, mock_provider_entry_point):
+        """Test that rule_path content is appended to the system prompt."""
+        rules_file = tmp_path / "rules.md"
+        rules_file.write_text("# Rules\nPrefer rg over grep.\n", encoding="utf-8")
+
+        config_file = tmp_path / "abc.conf"
+        config_file.write_text(
+            f"""[default]
+provider = mock_provider
+api_key = test_key
+rule_path = {rules_file.name}
+""",
+            encoding="utf-8",
+        )
+
+        with patch.object(metadata, 'entry_points') as mock_entry_points:
+            mock_entry_points.return_value = {'abc.llm_providers': [mock_provider_entry_point]}
+
+            test_args = ['abc_generate', '--config', str(config_file), 'list', 'files']
+            with patch.object(sys, 'argv', test_args):
+                exit_code = main()
+
+        assert exit_code == 0
+        system_prompt = mock_provider.generate_command.call_args.kwargs["system_prompt"]
+        assert "Prefer rg over grep." in system_prompt
+
+    def test_cli_rules_override_config_rules(self, isolated_environment, tmp_path, mock_provider, mock_provider_entry_point):
+        """Test that --rules takes precedence over rule_path from config."""
+        config_rules = tmp_path / "config-rules.md"
+        config_rules.write_text("Use config rules.", encoding="utf-8")
+        cli_rules = tmp_path / "cli-rules.md"
+        cli_rules.write_text("Use CLI rules.", encoding="utf-8")
+
+        config_file = tmp_path / "abc.conf"
+        config_file.write_text(
+            f"""[default]
+provider = mock_provider
+api_key = test_key
+rule_path = {config_rules.name}
+""",
+            encoding="utf-8",
+        )
+
+        with patch.object(metadata, 'entry_points') as mock_entry_points:
+            mock_entry_points.return_value = {'abc.llm_providers': [mock_provider_entry_point]}
+
+            test_args = [
+                'abc_generate',
+                '--config', str(config_file),
+                '--rules', str(cli_rules),
+                'list', 'files'
+            ]
+            with patch.object(sys, 'argv', test_args):
+                exit_code = main()
+
+        assert exit_code == 0
+        system_prompt = mock_provider.generate_command.call_args.kwargs["system_prompt"]
+        assert "Use CLI rules." in system_prompt
+        assert "Use config rules." not in system_prompt
+
+    def test_missing_rules_file_returns_error(self, isolated_environment, mock_config_file, mock_provider_entry_point):
+        """Test missing rules file returns a validation error."""
+        with patch.object(metadata, 'entry_points') as mock_entry_points:
+            mock_entry_points.return_value = {'abc.llm_providers': [mock_provider_entry_point]}
+
+            test_args = ['abc_generate', '--rules', '/definitely/missing/rules.md', 'list', 'files']
+            with patch.object(sys, 'argv', test_args):
+                import logging
+                import io
+
+                log_capture = io.StringIO()
+                handler = logging.StreamHandler(log_capture)
+                handler.setLevel(logging.ERROR)
+                logger = logging.getLogger()
+                logger.addHandler(handler)
+
+                try:
+                    exit_code = main()
+                    assert exit_code == 1
+                    assert "Could not read rules file" in log_capture.getvalue()
+                finally:
+                    logger.removeHandler(handler)
+
 
 
     def test_no_description_error(self, isolated_environment, mock_config_file, mock_provider_entry_point):
@@ -148,5 +231,4 @@ class TestConfigHandling:
         captured = capsys.readouterr()
         assert "Warning: Found both XDG config and legacy config" in captured.err
         assert config_path == str(xdg_config)
-
 

@@ -18,7 +18,8 @@ import configparser
 import logging
 import os
 import sys
-from typing import Dict
+from pathlib import Path
+from typing import Dict, Optional
 import re
 import distro
 from importlib import metadata
@@ -66,6 +67,8 @@ def create_argument_parser() -> argparse.ArgumentParser:
                         help='Specify the shell to generate commands for (default: bash)')
     parser.add_argument('--use', metavar='SECTION',
                         help='Use specific configuration section (default: default)')
+    parser.add_argument('--rules', metavar='PATH',
+                        help='Path to a Markdown file with additional system prompt rules')
 
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--verbose', action='store_const',
@@ -141,6 +144,36 @@ def get_provider(config: Dict[str, str]) -> LLMProvider:
             f"Please install abc-provider-{provider_name} package."
         )
 
+def resolve_rules_path(
+    cli_rules_path: Optional[str],
+    config_rules_path: Optional[str],
+    config_file_path: str,
+) -> Optional[Path]:
+    """Resolve the effective rules file path."""
+    if cli_rules_path:
+        raw_path = Path(os.path.expanduser(cli_rules_path))
+        return raw_path if raw_path.is_absolute() else Path.cwd() / raw_path
+
+    if config_rules_path:
+        raw_path = Path(os.path.expanduser(config_rules_path))
+        if raw_path.is_absolute():
+            return raw_path
+        return Path(config_file_path).expanduser().resolve().parent / raw_path
+
+    return None
+
+def load_rules_content(rules_path: Optional[Path]) -> Optional[str]:
+    """Load additional prompt rules from a file if configured."""
+    if rules_path is None:
+        return None
+
+    try:
+        content = rules_path.read_text(encoding='utf-8').strip()
+    except OSError as e:
+        raise ValueError(f"Could not read rules file '{rules_path}': {e.strerror or e}") from e
+
+    return content or None
+
 def process_generated_command(command: str) -> str:
     """Process the generated command based on its danger level.
     Also handles special markup like CDATA tags and markdown code blocks from certain LLM providers."""
@@ -206,12 +239,17 @@ def main() -> int:
             'shell': args.shell,
             'os_info': get_os_info()
         }
+        rules_path = resolve_rules_path(args.rules, config.get('rule_path'), config_file_path)
+        extra_rules = load_rules_content(rules_path)
+
+        if rules_path is not None:
+            logging.info(f"Using additional rules from: {rules_path}")
 
         # Generate command
         raw_command = provider.generate_command(
             description=description,
             context=context,
-            system_prompt=get_system_prompt(context)
+            system_prompt=get_system_prompt(context, extra_rules=extra_rules)
         )
 
         processed_command = process_generated_command(raw_command)

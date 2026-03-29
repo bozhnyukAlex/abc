@@ -85,6 +85,7 @@ def test_get_config_schema():
     assert "region" in schema["properties"]
     assert "model" in schema["properties"]
     assert "top_k" in schema["properties"]
+    assert "rule_path" in schema["properties"]
     assert schema["required"] == ["provider"]
     assert schema["properties"]["provider"]["enum"] == [PROVIDER_NAME]
 

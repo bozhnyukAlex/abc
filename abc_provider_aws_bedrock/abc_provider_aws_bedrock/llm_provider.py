@@ -147,6 +147,10 @@ class AWSBedrockProvider(LLMProvider):
                 "top_k": {
                     "type": "string",
                     "description": "Top-k parameter for sampling (optional)",
+                },
+                "rule_path": {
+                    "type": "string",
+                    "description": "Path to a Markdown file with additional system prompt rules"
                 }
             },
             "required": ["provider"]  # No api_key required - using AWS credentials

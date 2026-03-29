@@ -144,6 +144,10 @@ class OpenAIProvider(LLMProvider):
                     "description": "Reasoning effort for GPT-5 models (minimal, low, medium, high)",
                     "default": DEFAULT_REASONING_EFFORT,
                     "enum": ["minimal", "low", "medium", "high"]
+                },
+                "rule_path": {
+                    "type": "string",
+                    "description": "Path to a Markdown file with additional system prompt rules"
                 }
             },
             "required": ["provider", "api_key"]

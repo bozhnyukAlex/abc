@@ -1,13 +1,28 @@
 """System prompts for LLM providers."""
 
-def get_system_prompt(context: dict) -> str:
+from typing import Optional
+
+
+def get_system_prompt(context: dict, extra_rules: Optional[str] = None) -> str:
     """Get the system prompt for command generation.
 
     Args:
         context: Dictionary containing shell type, OS info, etc.
+        extra_rules: Optional user-provided rules to append to the prompt.
     """
     shell = context.get('shell', 'bash')
     os_info = context.get('os_info', 'POSIX')
+    extra_rules_block = ""
+
+    if extra_rules:
+        extra_rules_block = f"""
+
+<additional-rules>
+    <instruction>Follow these user-provided supplemental rules in addition to the standard instructions below.</instruction>
+<![CDATA[
+{extra_rules.strip()}
+]]>
+</additional-rules>"""
 
     return f"""<purpose>
     You are an expert in {shell} shell commands for {os_info}.
@@ -25,7 +40,7 @@ def get_system_prompt(context: dict) -> str:
     <instruction>Consider and handle edge cases (e.g., dot files, whitespace, missing/existing files).</instruction>
     <instruction>Consider and handle unusual environment conditions (e.g., user-defined aliases, environment variables)</instruction>
     <instruction>After generating the command line, evaluate its danger/risk level and add it on the second line in this format: ##DANGERLEVEL=[[CODE]]## [[justification]]</instruction>
-</instructions>
+</instructions>{extra_rules_block}
 
 <danger-levels>
     <level code="0">Read only, informational command.</level>
