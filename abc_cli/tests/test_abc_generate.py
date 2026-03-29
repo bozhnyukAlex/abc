@@ -1,5 +1,8 @@
 import pytest
-from abc_cli.abc_generate import process_generated_command
+from pathlib import Path
+
+from abc_cli.abc_generate import load_rules_content, process_generated_command, resolve_rules_path
+from abc_cli.prompts import get_system_prompt
 
 @pytest.mark.unit
 def test_process_generated_command_with_cdata():
@@ -106,3 +109,57 @@ echo "test"
 
     result = process_generated_command(input_command)
     assert result == expected_output
+
+@pytest.mark.unit
+def test_get_system_prompt_includes_extra_rules():
+    """Test that additional rules are appended to the system prompt."""
+    prompt = get_system_prompt({"shell": "bash", "os_info": "POSIX"}, extra_rules="# Extra rule")
+
+    assert "<additional-rules>" in prompt
+    assert "# Extra rule" in prompt
+
+@pytest.mark.unit
+def test_get_system_prompt_without_extra_rules():
+    """Test that prompt does not include additional rules block by default."""
+    prompt = get_system_prompt({"shell": "bash", "os_info": "POSIX"})
+
+    assert "<additional-rules>" not in prompt
+
+@pytest.mark.unit
+def test_resolve_rules_path_prefers_cli_path(tmp_path, monkeypatch):
+    """Test that CLI rules override config rules and resolve from cwd."""
+    config_file = tmp_path / "config.ini"
+    config_file.write_text("[default]\nprovider = mock_provider\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+
+    resolved = resolve_rules_path("rules.md", "config-rules.md", str(config_file))
+
+    assert resolved == tmp_path / "rules.md"
+
+@pytest.mark.unit
+def test_resolve_rules_path_uses_config_directory(tmp_path):
+    """Test that config rule paths are resolved relative to config location."""
+    config_dir = tmp_path / "config"
+    config_dir.mkdir()
+    config_file = config_dir / "abc.conf"
+    config_file.write_text("[default]\nprovider = mock_provider\n", encoding="utf-8")
+
+    resolved = resolve_rules_path(None, "rules.md", str(config_file))
+
+    assert resolved == config_dir / "rules.md"
+
+@pytest.mark.unit
+def test_load_rules_content_reads_markdown(tmp_path):
+    """Test reading additional rules from a markdown file."""
+    rules_file = tmp_path / "rules.md"
+    rules_file.write_text("# Rules\n\nBe strict.\n", encoding="utf-8")
+
+    result = load_rules_content(rules_file)
+
+    assert result == "# Rules\n\nBe strict."
+
+@pytest.mark.unit
+def test_load_rules_content_missing_file():
+    """Test missing rules file raises a readable error."""
+    with pytest.raises(ValueError, match="Could not read rules file"):
+        load_rules_content(Path("/definitely/missing/rules.md"))

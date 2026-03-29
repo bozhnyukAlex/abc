@@ -6,6 +6,7 @@ provider = anthropic
 # Anthropic API key from https://console.anthropic.com/settings/keys
 api_key = {ANTHROPIC_API_KEY}
 model = claude-sonnet-4-0
+# rule_path = ~/.config/abc/rules.md
 
 # Example configurations for other providers:
 
@@ -13,6 +14,7 @@ model = claude-sonnet-4-0
 # provider = openai
 # api_key = {OPENAI_API_KEY}  # OpenAI API key from https://platform.openai.com/api-keys
 # model = gpt-5
+# rule_path = ~/.config/abc/openai-rules.md
 
 # [bedrock-claude]  # AWS Bedrock Claude config
 # provider = aws-bedrock
@@ -29,3 +31,4 @@ model = claude-sonnet-4-0
 # Usage:
 # - Default: abc "your command description"
 # - Specific config: abc --use openai-gpt-5 "your command description"
+# - One-off rules override: abc --rules ~/tmp/rules.md "your command description"

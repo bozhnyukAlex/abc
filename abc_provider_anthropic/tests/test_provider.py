@@ -64,6 +64,7 @@ def test_get_config_schema():
     assert isinstance(schema, dict)
     assert "provider" in schema["properties"]
     assert "api_key" in schema["properties"]
+    assert "rule_path" in schema["properties"]
     assert schema["required"] == ["provider", "api_key"]
     assert schema["properties"]["provider"]["enum"] == ["anthropic"]
 

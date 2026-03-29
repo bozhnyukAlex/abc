@@ -81,6 +81,10 @@ class AnthropicProvider(LLMProvider):
                     "type": "string",
                     "description": "Maximum tokens in response",
                     "default": DEFAULT_MAX_TOKENS
+                },
+                "rule_path": {
+                    "type": "string",
+                    "description": "Path to a Markdown file with additional system prompt rules"
                 }
             },
             "required": ["provider", "api_key"]
